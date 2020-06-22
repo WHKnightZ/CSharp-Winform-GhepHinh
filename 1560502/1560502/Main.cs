@@ -39,7 +39,7 @@ namespace GhepHinh
 
         // lưu kích thước của mỗi mảnh, dùng trong tự động khớp vị trí
         // nếu lấy tâm của bức ảnh / kích thước mỗi mảnh => tọa độ theo hàng và cột
-        private int WP, HP;
+        public int WP, HP;
 
         // check xem chuột có đang bị giữ ko, có giữ thì mới di chuyển được mảnh tranh
         public bool isDragging = false;
@@ -73,9 +73,6 @@ namespace GhepHinh
 
         // và cần một biến để đếm thứ tự mảnh, bắt đầu từ 1
         public int indexPiece = 1;
-
-        // offset khi di chuyển mảnh ghép bằng button Control
-        public int offsetX, offsetY;
 
         public Main()
         {
@@ -449,22 +446,6 @@ namespace GhepHinh
             // tuy nhiên phải check xem vị trí nó ko đúng thì mới cần đặt lại
             if (frmRemote.Left != Width + Left + 10 || frmRemote.Top != Top)
                 frmRemote.Location = new Point(Width + Left + 10, Top);
-        }
-
-        // timer để di chuyển mảnh ghép khi bấm button, mỗi khi bấm button, timer chạy liên tục
-        // cho đến khi nhả button
-        private void timer_Tick(object sender, EventArgs e)
-        {
-            PictureBox pic = picBox[selected];
-            int left = pic.Left, top = pic.Top;
-
-            // thay đổi liên tục một lượng offsetX, Y, được quy định dựa theo button đã bấm
-            left += offsetX;
-            top += offsetY;
-
-            // tiếp tục giới hạn và đặt lại vị trí mới cho mảnh ghép
-            clamp(pic, ref left, ref top);
-            pic.Location = new Point(left, top);
         }
 
     }

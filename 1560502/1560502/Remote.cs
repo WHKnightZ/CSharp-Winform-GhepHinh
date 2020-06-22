@@ -98,15 +98,15 @@ namespace GhepHinh
                 PictureBox pic = sender as PictureBox;
 
                 // lấy chỉ số bức ảnh
-                int selected = (int)pic.Tag;
+                int s = (int)pic.Tag;
 
                 // xóa bức ảnh bên Remote
                 pic.Dispose();
 
-                Bitmap b = (Bitmap)parent.picBox[selected].Image;
+                Bitmap b = (Bitmap)parent.picBox[s].Image;
 
                 // cần xoay bức ảnh bên main cho đúng chiều bên remote
-                switch (parent.direction[selected])
+                switch (parent.direction[s])
                 {
                     case 1: b.RotateFlip(RotateFlipType.Rotate270FlipNone); break;
                     case 2: b.RotateFlip(RotateFlipType.Rotate180FlipNone); break;
@@ -114,7 +114,7 @@ namespace GhepHinh
                     default: break;
                 }
 
-                pic = parent.picBox[selected];
+                pic = parent.picBox[s];
                 pic.Image = b;
 
                 // gán parent để thêm PictureBox này vào trong grpMain
@@ -125,16 +125,18 @@ namespace GhepHinh
                 pic.MouseUp += parent.pictureBox_MouseUp;
                 pic.MouseMove += parent.pictureBox_MouseMove;
 
-                parent.changeHighLight(selected);
+                parent.changeHighLight(s);
 
-                parent.checkPiece(selected);
+                parent.checkPiece(s);
 
                 // cài đặt ánh xạ
-                parent.map1[selected] = parent.indexPiece;
-                parent.map2[parent.indexPiece] = selected;
+                parent.map1[s] = parent.indexPiece;
+                parent.map2[parent.indexPiece] = s;
                 parent.indexPiece++;
 
                 changeIndex(parent.indexPiece - 1);
+
+                selected = -1;
             }
         }
 
@@ -151,33 +153,52 @@ namespace GhepHinh
         }
 
         // các hàm của button điều khiển
-        private void btnRotate_Click(object sender, EventArgs e)
-        {
-            parent.rotatePicbox();
-        }
-
-        private void btnMinus_MouseClick(object sender, MouseEventArgs e)
+        private void btnMinus_MouseDown(object sender, MouseEventArgs e)
         {
             if (parent.indexPiece > 1)
                 changeIndex(index - 1);
             parent.changeHighLight(parent.map2[index]);
         }
 
-        private void btnPlus_MouseClick(object sender, MouseEventArgs e)
+        private void btnPlus_MouseDown(object sender, MouseEventArgs e)
         {
             if (parent.indexPiece > 1)
                 changeIndex(index + 1);
             parent.changeHighLight(parent.map2[index]);
         }
 
+        private void btnRotate_MouseDown(object sender, MouseEventArgs e)
+        {
+            parent.rotatePicbox();
+        }
+
+        // dịch ảnh theo từng ô, công thêm một lượng bằng kích thước 1 ô WP và HP
+        private void translate(int x, int y)
+        {
+            PictureBox pic = parent.picBox[parent.selected];
+            int left = pic.Left, top = pic.Top;
+            left += x;
+            top += y;
+
+            // check biên phòng trường hợp số quá to đi ra hẳn màn hình
+            if (left < 10) left = 10;
+            else if (left > 490 - parent.WP) left = 490 - parent.WP;
+            if (top < 20) top = 20;
+            else if (top > 404 - parent.HP) top = 404 - parent.HP;
+
+            // tự khớp ảnh và check biên
+            parent.fit(pic, ref left, ref top);
+            parent.clamp(pic, ref left, ref top);
+            pic.Location = new Point(left, top);
+
+            parent.checkPiece(parent.selected);
+        }
+
         private void btnLeft_MouseDown(object sender, MouseEventArgs e)
         {
-            // bật timer và đặt offset, sang trái thì x = -5, y = 0 ...
             if (parent.selected != -1)
             {
-                parent.timer.Enabled = true;
-                parent.offsetX = -5;
-                parent.offsetY = 0;
+                translate(-parent.WP, 0);
             }
         }
 
@@ -185,9 +206,7 @@ namespace GhepHinh
         {
             if (parent.selected != -1)
             {
-                parent.timer.Enabled = true;
-                parent.offsetX = 5;
-                parent.offsetY = 0;
+                translate(parent.WP, 0);
             }
         }
 
@@ -195,9 +214,7 @@ namespace GhepHinh
         {
             if (parent.selected != -1)
             {
-                parent.timer.Enabled = true;
-                parent.offsetX = 0;
-                parent.offsetY = -5;
+                translate(0, -parent.HP);
             }
         }
 
@@ -205,28 +222,7 @@ namespace GhepHinh
         {
             if (parent.selected != -1)
             {
-                parent.timer.Enabled = true;
-                parent.offsetX = 0;
-                parent.offsetY = 5;
-            }
-        }
-
-        private void btn_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (parent.selected != -1)
-            {
-                // nhả button thì cần tắt timer, tự khớp ảnh, check xem win ko
-                parent.timer.Enabled = false;
-
-                PictureBox pic = parent.picBox[selected];
-                int left = pic.Left, top = pic.Top;
-
-                // tự khớp ảnh và check biên
-                parent.fit(pic, ref left, ref top);
-                parent.clamp(pic, ref left, ref top);
-                pic.Location = new Point(left, top);
-
-                parent.checkPiece(parent.selected);
+                translate(0, parent.HP);
             }
         }
 
@@ -237,5 +233,6 @@ namespace GhepHinh
             if (parent.Left != Left - 10 - parent.Width || parent.Top != Top)
                 parent.Location = new Point(Left - 10 - parent.Width, Top);
         }
+
     }
 }

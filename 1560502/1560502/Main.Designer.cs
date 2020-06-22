@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.btnStart = new System.Windows.Forms.Button();
             this.numCol = new System.Windows.Forms.NumericUpDown();
@@ -38,7 +37,6 @@
             this.lblRow = new System.Windows.Forms.Label();
             this.lblCol = new System.Windows.Forms.Label();
             this.grpMain = new System.Windows.Forms.GroupBox();
-            this.timer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.numCol)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRow)).BeginInit();
             this.grpOption.SuspendLayout();
@@ -156,11 +154,6 @@
             this.grpMain.TabStop = false;
             this.grpMain.Text = "Main";
             // 
-            // timer
-            // 
-            this.timer.Interval = 15;
-            this.timer.Tick += new System.EventHandler(this.timer_Tick);
-            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -195,7 +188,6 @@
         private System.Windows.Forms.Label lblRow;
         private System.Windows.Forms.Label lblCol;
         public System.Windows.Forms.GroupBox grpMain;
-        public System.Windows.Forms.Timer timer;
     }
 }
 

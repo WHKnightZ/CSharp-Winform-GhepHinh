@@ -30,9 +30,9 @@
         {
             this.grpPieces = new System.Windows.Forms.GroupBox();
             this.grpSelectPiece = new System.Windows.Forms.GroupBox();
-            this.lblSelected = new System.Windows.Forms.Label();
             this.btnPlus = new System.Windows.Forms.PictureBox();
             this.btnMinus = new System.Windows.Forms.PictureBox();
+            this.lblSelected = new System.Windows.Forms.Label();
             this.grpControl = new System.Windows.Forms.GroupBox();
             this.btnRotate = new System.Windows.Forms.PictureBox();
             this.btnLeft = new System.Windows.Forms.PictureBox();
@@ -61,25 +61,15 @@
             // 
             // grpSelectPiece
             // 
-            this.grpSelectPiece.Controls.Add(this.lblSelected);
             this.grpSelectPiece.Controls.Add(this.btnPlus);
             this.grpSelectPiece.Controls.Add(this.btnMinus);
+            this.grpSelectPiece.Controls.Add(this.lblSelected);
             this.grpSelectPiece.Location = new System.Drawing.Point(370, 12);
             this.grpSelectPiece.Name = "grpSelectPiece";
             this.grpSelectPiece.Size = new System.Drawing.Size(206, 107);
             this.grpSelectPiece.TabIndex = 2;
             this.grpSelectPiece.TabStop = false;
             this.grpSelectPiece.Text = "Select Piece";
-            // 
-            // lblSelected
-            // 
-            this.lblSelected.Font = new System.Drawing.Font("Arial", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblSelected.Location = new System.Drawing.Point(74, 28);
-            this.lblSelected.Name = "lblSelected";
-            this.lblSelected.Size = new System.Drawing.Size(66, 51);
-            this.lblSelected.TabIndex = 2;
-            this.lblSelected.Text = "0";
-            this.lblSelected.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // btnPlus
             // 
@@ -89,7 +79,7 @@
             this.btnPlus.Size = new System.Drawing.Size(40, 40);
             this.btnPlus.TabIndex = 1;
             this.btnPlus.TabStop = false;
-            this.btnPlus.MouseClick += new System.Windows.Forms.MouseEventHandler(this.btnPlus_MouseClick);
+            this.btnPlus.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnPlus_MouseDown);
             // 
             // btnMinus
             // 
@@ -99,7 +89,17 @@
             this.btnMinus.Size = new System.Drawing.Size(40, 40);
             this.btnMinus.TabIndex = 0;
             this.btnMinus.TabStop = false;
-            this.btnMinus.MouseClick += new System.Windows.Forms.MouseEventHandler(this.btnMinus_MouseClick);
+            this.btnMinus.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnMinus_MouseDown);
+            // 
+            // lblSelected
+            // 
+            this.lblSelected.Font = new System.Drawing.Font("Arial", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblSelected.Location = new System.Drawing.Point(45, 28);
+            this.lblSelected.Name = "lblSelected";
+            this.lblSelected.Size = new System.Drawing.Size(125, 51);
+            this.lblSelected.TabIndex = 2;
+            this.lblSelected.Text = "0";
+            this.lblSelected.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // grpControl
             // 
@@ -123,7 +123,7 @@
             this.btnRotate.Size = new System.Drawing.Size(40, 40);
             this.btnRotate.TabIndex = 5;
             this.btnRotate.TabStop = false;
-            this.btnRotate.Click += new System.EventHandler(this.btnRotate_Click);
+            this.btnRotate.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnRotate_MouseDown);
             // 
             // btnLeft
             // 
@@ -134,7 +134,6 @@
             this.btnLeft.TabIndex = 4;
             this.btnLeft.TabStop = false;
             this.btnLeft.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnLeft_MouseDown);
-            this.btnLeft.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btn_MouseUp);
             // 
             // btnRight
             // 
@@ -145,7 +144,6 @@
             this.btnRight.TabIndex = 3;
             this.btnRight.TabStop = false;
             this.btnRight.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnRight_MouseDown);
-            this.btnRight.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btn_MouseUp);
             // 
             // btnDown
             // 
@@ -156,7 +154,6 @@
             this.btnDown.TabIndex = 2;
             this.btnDown.TabStop = false;
             this.btnDown.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnDown_MouseDown);
-            this.btnDown.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btn_MouseUp);
             // 
             // btnUp
             // 
@@ -167,7 +164,6 @@
             this.btnUp.TabIndex = 1;
             this.btnUp.TabStop = false;
             this.btnUp.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnUp_MouseDown);
-            this.btnUp.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btn_MouseUp);
             // 
             // Remote
             // 
