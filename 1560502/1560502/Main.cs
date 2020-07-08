@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 // khi chọn hình nên ưu tiên hình có kích thước >= 480x384, tỉ lệ 5:4 (kích thước ảnh sau resize là 480x384)
@@ -20,16 +22,6 @@ namespace GhepHinh
 
         // để random giá trị cần
         private Random random = new Random();
-
-        // lưu danh sách các mảnh ở bên form Main, lúc đầu sẽ chưa được cho vào groupBox Main
-        // sẽ được thêm vào groupBox khi kích đúp vào mảnh ở form Remote
-        public PictureBox[] picBox = new PictureBox[100];
-
-        // lưu hướng xoay của các mảnh
-        public int[] direction = new int[100];
-
-        // hướng xoay 0 => next là 1, 1 => 2, 2 => 3, 3 => 0
-        public int[] nextDirection = { 1, 2, 3, 0 };
 
         // kích thước ảnh đầy đủ ở form Main
         private const int WM = 480, HM = 384;
@@ -57,13 +49,6 @@ namespace GhepHinh
         // một mảng để lưu tọa độ theo hàng và cột của các mảnh
         public Point[] pos = new Point[100];
 
-        // mảnh được chọn hiện tại, = -1 nghĩa là chưa chọn
-        public int selected = -1;
-
-        // bút để vẽ highlight màu đỏ, kích thước bằng 4
-        public Pen pen = new Pen(Color.Red) { Width = 4 };
-        public Bitmap old;
-
         // cần một mảng để ánh xạ xem ảnh được chọn là ảnh thứ bao nhiêu cho vào form Main
         // ảnh đầu cho vào form Main sẽ là 1, tiếp đến là 2, 3 ...
         public int[] map1 = new int[100];
@@ -73,6 +58,10 @@ namespace GhepHinh
 
         // và cần một biến để đếm thứ tự mảnh, bắt đầu từ 1
         public int indexPiece = 1;
+
+        //
+        public List<Piece> pieces = new List<Piece>();
+        public Piece selectedPiece = null;
 
         public Main()
         {
@@ -94,26 +83,139 @@ namespace GhepHinh
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
-            // còn ảnh nào thì xóa hết ảnh đấy đi
-            for (int i = 0; i < countPieces; i++)
-            {
-                if (picBox[i] != null)
-                    picBox[i].Dispose();
-                if (frmRemote.picBox[i] != null)
-                    frmRemote.picBox[i].Dispose();
-            }
+            //// còn ảnh nào thì xóa hết ảnh đấy đi
+            //for (int i = 0; i < countPieces; i++)
+            //{
+            //    if (picBox[i] != null)
+            //        picBox[i].Dispose();
+            //    if (frmRemote.picBox[i] != null)
+            //        frmRemote.picBox[i].Dispose();
+            //}
 
-            // gán lại các trạng thái lúc đầu của các form
-            selected = -1;
-            frmRemote.selected = -1;
-            indexPiece = 1;
-            frmRemote.index = 0;
-            frmRemote.lblSelected.Text = "0";
+            //// gán lại các trạng thái lúc đầu của các form
+            //selected = -1;
+            //frmRemote.selected = -1;
+            //indexPiece = 1;
+            //frmRemote.index = 0;
+            //frmRemote.lblSelected.Text = "0";
         }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
             openFileDialog.ShowDialog();
+
+        }
+
+        private List<PieceBitmap> splitImage(Bitmap img)
+        {
+            List<PieceBitmap> pieceBitmaps = new List<PieceBitmap>();
+
+            int w = img.Width / col;
+            int h = img.Height / row;
+            int wf, hf, xo, yo, xo2, yo2;
+
+            int[] horizontalsX = { 0, (int)(w * 0.4f), (int)(w * 0.38f), (int)(w * 0.5f), (int)(w * 0.62f), (int)(w * 0.6f), w };
+            int[] horizontalsY = { 0, 0, (int)(h * 0.2f), (int)(h * 0.25f), (int)(h * 0.2f), 0, 0 };
+
+            int[] verticalsX = { 0, 0, (int)(w * 0.2f), (int)(w * 0.25f), (int)(w * 0.2f), 0, 0 };
+            int[] verticalsY = { 0, (int)(h * 0.4f), (int)(h * 0.38f), (int)(h * 0.5f), (int)(h * 0.62f), (int)(h * 0.6f), h };
+
+            Pen p = new Pen(Color.Black) { Width = 2 };
+            Pen pHighlight = new Pen(Color.Red) { Width = 2 };
+
+            Brush brush = new TextureBrush(img);
+            Point[] points;
+
+            int countPoints = horizontalsX.Length;
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < col; j++)
+                {
+                    GraphicsPath path = new GraphicsPath();
+
+                    int left = j * w, top = i * h;
+                    int right = left + w, bottom = top + h;
+                    int k = (i + j) % 2 == 0 ? 1 : -1;
+
+                    // Vẽ đường bên trên
+                    yo = 5;
+                    if (i == 0) path.AddLine(left, top, right, top);
+                    else
+                    {
+                        if (k == -1) yo = (int)(h * 0.3f);
+                        points = new Point[countPoints];
+                        for (int n = 0; n < countPoints; n++)
+                            points[n] = new Point(left + horizontalsX[n], top + k * horizontalsY[n]);
+                        path.AddCurve(points);
+                    }
+
+                    // Vẽ đường bên phải
+                    xo2 = 5;
+                    if (j == col - 1) path.AddLine(right, top, right, bottom);
+                    else
+                    {
+                        if (k == 1) xo2 = (int)(w * 0.3f);
+                        points = new Point[countPoints];
+                        for (int n = 0; n < countPoints; n++)
+                            points[n] = new Point(right + k * verticalsX[n], top + verticalsY[n]);
+                        path.AddCurve(points);
+                    }
+
+                    // Vẽ đường bên dưới
+                    yo2 = 5;
+                    if (i == row - 1) path.AddLine(right, bottom, left, bottom);
+                    else
+                    {
+                        if (k == -1) yo2 = (int)(h * 0.3f);
+                        points = new Point[countPoints];
+                        for (int n = 0; n < countPoints; n++)
+                            points[n] = new Point(right - horizontalsX[n], bottom - k * horizontalsY[n]);
+                        path.AddCurve(points);
+                    }
+
+                    // Vẽ đường bên trái
+                    xo = 5;
+                    if (j == 0) path.AddLine(left, bottom, left, top);
+                    else
+                    {
+                        if (k == 1) xo = (int)(w * 0.3f);
+                        points = new Point[countPoints];
+                        for (int n = 0; n < countPoints; n++)
+                            points[n] = new Point(left - k * verticalsX[n], bottom - verticalsY[n]);
+                        path.AddCurve(points);
+                    }
+
+                    wf = xo + w + xo2;
+                    hf = yo + h + yo2;
+                    Bitmap bmp = new Bitmap(wf, hf);
+                    Graphics g = Graphics.FromImage(bmp);
+
+                    g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                    g.CompositingQuality = CompositingQuality.HighQuality;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                    g.TranslateTransform(xo - w * j, yo - h * i);
+                    g.FillPath(brush, path);
+                    g.DrawPath(p, path);
+
+                    Bitmap bmp2 = new Bitmap(wf, hf);
+                    Graphics g2 = Graphics.FromImage(bmp2);
+
+                    g2.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                    g2.CompositingQuality = CompositingQuality.HighQuality;
+                    g2.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g2.SmoothingMode = SmoothingMode.AntiAlias;
+
+                    g2.TranslateTransform(xo - w * j, yo - h * i);
+                    g2.FillPath(brush, path);
+                    g2.DrawPath(pHighlight, path);
+
+                    pieceBitmaps.Add(new PieceBitmap(bmp, bmp2, new Rectangle(0, 0, wf, hf)));
+                }
+            }
+            return pieceBitmaps;
         }
 
         private void openFileDialog_FileOk(object sender, CancelEventArgs e)
@@ -154,90 +256,31 @@ namespace GhepHinh
             Graphics gRemote = Graphics.FromImage(srcRemote);
             gRemote.DrawImage(image, new Rectangle(0, 0, WR, HR));
 
-            Rectangle cropRect;
-            PictureBox pic;
-            Bitmap target;
-            Graphics g;
+            pieces = new List<Piece>();
+            List<PieceBitmap> p1 = splitImage(srcMain);
+            List<PieceBitmap> p2 = splitImage(srcRemote);
 
-            // kích thước 1 piece ở các form Main và Remote
-            WP = WM / col;
-            HP = HM / row;
-            int wr = WR / col, hr = HR / row, wr1, hr1;
-            int k;
+            int direction;
 
-            for (int i = 0; i < row; i++)
+            for (int i = 0; i < countPieces; i++)
             {
-                for (int j = 0; j < col; j++)
+                p2[i].rect.Location = new Point(random.Next(frmRemote.remotePic.Width), random.Next(frmRemote.remotePic.Height));
+                direction = random.Next(4);
+                switch (direction)
                 {
-                    k = i * col + j;
-
-                    // cắt ảnh dựa theo tọa độ i, j
-                    cropRect = new Rectangle(j * wr, i * hr, wr, hr);
-                    target = new Bitmap(wr, hr);
-
-                    // Graphics.FromImage để khởi tạo việc vẽ lên ảnh target
-                    g = Graphics.FromImage(target);
-                    // cắt từ ảnh srcRemote tại vị trí cropRect và vẽ lên ảnh target
-                    g.DrawImage(srcRemote, new Rectangle(0, 0, wr, hr), cropRect, GraphicsUnit.Pixel);
-
-                    // ngẫu nhiên từ 0->3 tương đương xoay trái 0->3 lần
-                    // hướng xoay sẽ được lưu lại để về sau truyền sang form Main
-                    direction[k] = random.Next(4);
-                    switch (direction[k])
-                    {
-                        // 1->xoay trái 90 hay chính là xoay phải 270
-                        case 1: target.RotateFlip(RotateFlipType.Rotate270FlipNone); break;
-                        // 2->xoay 2 lần hay chính là 180
-                        case 2: target.RotateFlip(RotateFlipType.Rotate180FlipNone); break;
-                        case 3: target.RotateFlip(RotateFlipType.Rotate90FlipNone); break;
-                        default: break;
-                    }
-                    // sau khi xoay xong có thể kích thước ảnh bị thay đổi (đổi w cho h) nên phải tính lại w, h, lưu vào wr1, hr1
-                    wr1 = target.Width;
-                    hr1 = target.Height;
-                    pic = new PictureBox() { SizeMode = PictureBoxSizeMode.AutoSize };
-                    pic.Image = target;
-
-                    // vị trí của bức ảnh phải nằm trong khoảng 0->kích thước cha-con để tránh ảnh bị bay ra ngoài groupBox
-                    pic.Location = new Point(random.Next(frmRemote.grpPieces.Width - wr1 - 20) + 10, random.Next(frmRemote.grpPieces.Height - hr1 - 28) + 20);
-                    pic.Parent = frmRemote.grpPieces;
-
-                    // sử dụng tag để lưu chỉ số của pictureBox, về sau sẽ dùng trong bắt sự kiện
-                    pic.Tag = k;
-
-                    // các sự kiện down, up, move để kéo dê pictureBox, sự kiện nháy đúp
-                    pic.MouseDown += frmRemote.pictureBox_MouseDown;
-                    pic.MouseUp += pictureBox_MouseUp;
-                    pic.MouseMove += pictureBox_MouseMove;
-                    pic.MouseDoubleClick += frmRemote.pictureBox_MouseDoubleClick;
-
-                    frmRemote.picBox[k] = pic;
-
-                    int posX = j * WP, posY = i * HP;
-                    cropRect = new Rectangle(posX, posY, WP, HP);
-
-                    // tọa độ theo cột, hàng của mảnh k đương nhiên là j, i
-                    pos[k] = new Point(j, i);
-
-                    target = new Bitmap(WP, HP);
-                    g = Graphics.FromImage(target);
-                    g.DrawImage(srcMain, new Rectangle(0, 0, WP, HP), cropRect, GraphicsUnit.Pixel);
-
-                    pic = new PictureBox() { SizeMode = PictureBoxSizeMode.AutoSize };
-                    pic.Image = target;
-
-                    // vị trí của các bức ảnh đều nằm ở góc trái
-                    pic.Location = new Point(10, 20);
-
-                    // sử dụng tag để lưu chỉ số của pictureBox, về sau sẽ dùng trong bắt sự kiện
-                    pic.Tag = k;
-
-                    picBox[k] = pic;
+                    case 1: p2[i].rotateLeft(); break;
+                    case 2: p2[i].rotate180(); break;
+                    case 3: p2[i].rotateRight(); break;
+                    default: break;
                 }
+                frmRemote.clamp(ref p2[i].rect);
+                pieces.Add(new Piece(p1[i], p2[i], i, direction));
             }
 
             // chọn xong ảnh thì show form Remote và cho phép dùng Help
             frmRemote.Show();
+            frmRemote.pieces = pieces;
+            frmRemote.remotePic.Invalidate();
             cbHelp.Enabled = true;
         }
 
@@ -269,113 +312,99 @@ namespace GhepHinh
             top = row * HP + HP / 2 - p.Height / 2 + 20; // đương nhiên phải bù lại margin left và top
         }
 
-        // hàm này để giới hạn biên cho bức ảnh, ko thể ra ngoài groupBox
-        public void clamp(PictureBox p, ref int left, ref int top)
+        // hàm này để giới hạn biên cho bức ảnh, ko thể ra ngoài mainPic
+        public void clamp(ref Rectangle r)
         {
-            if (left < 10) left = 10; // biên trái là 10 (marginLeft 10 :D)
-            if (top < 20) top = 20; // biên trên 20
+            int left = r.X;
+            int top = r.Y;
+            if (left < 0) left = 0; // biên trái là 0
+            if (top < 0) top = 0; // biên trên 0
 
             // sau khi clamp xong left, top thì phải clamp cả right và bottom tuy nhiên right và bottom ko sửa trực tiếp
             // được nên cần thông qua left và top, để ý thì left + p.Width chính là right ...
-            if (left + p.Width > p.Parent.Width - 10) left = p.Parent.Width - p.Width - 10; // biên phải 10
-            if (top + p.Height > p.Parent.Height - 8) top = p.Parent.Height - p.Height - 8; // biên dưới 8
+            if (left + r.Width > mainPic.Width) left = mainPic.Width - r.Width;
+            if (top + r.Height > mainPic.Height) top = mainPic.Height - r.Height;
+            r.Location = new Point(left, top);
         }
 
-        public void changeHighLight(int s)
+        public void rotate()
         {
-            // ảnh được chọn khác với ảnh hiện tại thì mới cần sửa
-            if (selected != s)
+            if (selectedPiece != null)
             {
-                if (selected != -1)
+                selectedPiece.mainPiece.rotateLeft();
+                selectedPiece.direction++;
+
+                clamp(ref selectedPiece.mainPiece.rect);
+
+                if (selectedPiece.direction == 4)
+                    selectedPiece.direction = 0;
+                mainPic.Invalidate();
+            }
+        }
+
+        private void mainPic_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            foreach (Piece piece in pieces)
+            {
+                if (piece.isActive)
+                    g.DrawImage(piece.mainPiece.GetBmp, piece.mainPiece.rect);
+            }
+        }
+
+        private Piece getPieceByMouse(int x, int y)
+        {
+            for (int i = countPieces - 1; i >= 0; i--)
+            {
+                if (pieces[i].isActive && pieces[i].mainPiece.rect.Contains(x, y))
                 {
-                    // nếu đã có hình được chọn thì phải xóa highlight đi bằng cách gán lại hình ảnh cũ đã lưu
-                    picBox[selected].Image = old;
+                    return pieces[i];
                 }
-                selected = s;
-
-                // old để lưu lại ảnh khi chưa bị vẽ highlight lên
-                old = (Bitmap)picBox[selected].Image;
-                Bitmap b = new Bitmap(old);
-                Graphics g = Graphics.FromImage(b);
-
-                // dùng graphics để vẽ highlight bằng một hình chữ nhật màu đỏ
-                g.DrawRectangle(pen, new Rectangle(2, 2, old.Width - 4, old.Height - 4));
-                picBox[selected].Image = b;
-
-                // đưa ảnh được chọn lên trên
-                picBox[selected].BringToFront();
             }
+            return null;
         }
 
-        public void rotatePicbox()
-        {
-            if (selected != -1)
-            {
-                // sửa lại direction của ảnh
-                rotate(selected);
-
-                // xoay ảnh old và ảnh đang chọn luôn
-                old.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                Bitmap b = (Bitmap)picBox[selected].Image;
-                b.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                PictureBox pic = picBox[selected];
-                pic.Image = b;
-
-                // đặt lại vị trí bức ảnh để vị trí xoay tại tâm
-                int left = pic.Left + (pic.Height - pic.Width) / 2, top = pic.Top + (pic.Width - pic.Height) / 2;
-
-                // tự khớp ảnh và check biên
-                fit(pic, ref left, ref top);
-                clamp(pic, ref left, ref top);
-                pic.Location = new Point(left, top);
-
-                // check xem mảnh ghép đúng chưa
-                checkPiece(selected);
-            }
-        }
-
-        public void pictureBox_MouseDown(object sender, MouseEventArgs e)
+        private void mainPic_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
-                // lấy ảnh được chọn
-                PictureBox pic = sender as PictureBox;
+                // lấy ảnh được chọn theo tọa độ chuột
+                Piece piece = getPieceByMouse(e.X, e.Y);
+                if (piece == null)
+                    return;
 
-                // vẽ highlight lên mảnh được chọn đồng thời lưu lại tọa độ chuột
-                // để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
-                changeHighLight((int)pic.Tag);
+                // xóa highlight ảnh cũ
+                if (selectedPiece != null)
+                    selectedPiece.mainPiece.isHighlight = false;
 
-                // khi click vào ảnh thì phải đổi chỉ số bên form Remote
-                frmRemote.changeIndex(map1[selected]);
+                // được phép kéo dê ảnh
                 isDragging = true;
+
+                // lưu lại tọa độ chuột để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
                 currentX = e.X;
                 currentY = e.Y;
+
+                // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
+                // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
+                selectedPiece = piece;
+                pieces.Remove(selectedPiece);
+                pieces.Add(selectedPiece);
+
+                // tạo highlight ảnh mới
+                selectedPiece.mainPiece.isHighlight = true;
+
+                // khi click vào ảnh thì phải đổi chỉ số bên form Remote
+                //frmRemote.changeIndex(map1[selected]);
+                mainPic.Invalidate();
             }
             else if (e.Button == MouseButtons.Right)
             {
                 // khi bấm chuột phải, xoay ảnh
-                rotatePicbox();
+                rotate();
             }
         }
 
-        public void pictureBox_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (isDragging)
-            {
-                int top, left;
-                PictureBox picBox = sender as PictureBox;
-                left = picBox.Left + (e.X - currentX);
-                top = picBox.Top + (e.Y - currentY);
-
-                // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
-                clamp(picBox, ref left, ref top);
-
-                // và đặt lại vị trí
-                picBox.Location = new Point(left, top);
-            }
-        }
-
-        public void pictureBox_MouseUp(object sender, MouseEventArgs e)
+        private void mainPic_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
@@ -383,25 +412,64 @@ namespace GhepHinh
 
                 // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
 
-                if (selected != -1)
-                {
-                    PictureBox pic = picBox[selected];
-                    int left = pic.Left, top = pic.Top;
+                //if (selected != -1)
+                //{
+                //    PictureBox pic = picBox[selected];
+                //    int left = pic.Left, top = pic.Top;
 
-                    // tự khớp ảnh và check biên
-                    fit(pic, ref left, ref top);
-                    clamp(pic, ref left, ref top);
-                    pic.Location = new Point(left, top);
+                //    // tự khớp ảnh và check biên
+                //    fit(pic, ref left, ref top);
+                //    clamp(pic, ref left, ref top);
+                //    pic.Location = new Point(left, top);
 
-                    checkPiece(selected);
-                }
+                //    checkPiece(selected);
+                //}
             }
         }
 
-        public void rotate(int s)
+        private void mainPic_MouseMove(object sender, MouseEventArgs e)
         {
-            direction[s] = nextDirection[direction[s]];
+            if (isDragging)
+            {
+                int top, left;
+
+                left = selectedPiece.mainPiece.rect.Left + (e.X - currentX);
+                top = selectedPiece.mainPiece.rect.Top + (e.Y - currentY);
+                selectedPiece.mainPiece.rect.Location = new Point(left, top);
+
+                currentX = e.X;
+                currentY = e.Y;
+
+                // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
+                clamp(ref selectedPiece.mainPiece.rect);
+
+                // Invalidate để vẽ lại pictureBox
+                mainPic.Invalidate();
+            }
         }
+
+        //public void pictureBox_MouseUp(object sender, MouseEventArgs e)
+        //{
+        //    if (e.Button == MouseButtons.Left)
+        //    {
+        //        isDragging = false;
+
+        //        // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
+
+        //        if (selected != -1)
+        //        {
+        //            PictureBox pic = picBox[selected];
+        //            int left = pic.Left, top = pic.Top;
+
+        //            // tự khớp ảnh và check biên
+        //            fit(pic, ref left, ref top);
+        //            clamp(pic, ref left, ref top);
+        //            pic.Location = new Point(left, top);
+
+        //            checkPiece(selected);
+        //        }
+        //    }
+        //}
 
         public bool checkWin()
         {
@@ -414,30 +482,30 @@ namespace GhepHinh
 
         public void checkPiece(int s)
         {
-            PictureBox p = picBox[s];
-            int left = p.Left, top = p.Top;
-            int col = (left + (p.Width / 2) - 10) / WP;
-            int row = (top + (p.Height / 2) - 20) / HP;
+            //PictureBox p = picBox[s];
+            //int left = p.Left, top = p.Top;
+            //int col = (left + (p.Width / 2) - 10) / WP;
+            //int row = (top + (p.Height / 2) - 20) / HP;
 
-            // nếu hướng của mảnh là 0 đồng thời mảnh đó nằm đúng hàng cột thì mảnh đó Ok
-            if (direction[s] == 0 && col == pos[s].X && row == pos[s].Y)
-            {
-                map[s] = true;
+            //// nếu hướng của mảnh là 0 đồng thời mảnh đó nằm đúng hàng cột thì mảnh đó Ok
+            //if (direction[s] == 0 && col == pos[s].X && row == pos[s].Y)
+            //{
+            //    map[s] = true;
 
-                // check xong mảnh đó rồi thì check win luôn
-                if (checkWin())
-                {
-                    picBox[selected].Image = old;
-                    for (int i = 0; i < countPieces; i++)
-                    {
-                        // ko cho click vào ảnh nữa
-                        picBox[i].Enabled = false;
-                    }
-                    MessageBox.Show("Bạn đã thắng!", "Thông báo");
-                }
-            }
-            else
-                map[s] = false;
+            //    // check xong mảnh đó rồi thì check win luôn
+            //    if (checkWin())
+            //    {
+            //        picBox[selected].Image = old;
+            //        for (int i = 0; i < countPieces; i++)
+            //        {
+            //            // ko cho click vào ảnh nữa
+            //            picBox[i].Enabled = false;
+            //        }
+            //        MessageBox.Show("Bạn đã thắng!", "Thông báo");
+            //    }
+            //}
+            //else
+            //    map[s] = false;
         }
 
         private void Main_LocationChanged(object sender, EventArgs e)

@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.grpPieces = new System.Windows.Forms.GroupBox();
+            this.remotePic = new System.Windows.Forms.PictureBox();
             this.grpSelectPiece = new System.Windows.Forms.GroupBox();
             this.btnPlus = new System.Windows.Forms.PictureBox();
             this.btnMinus = new System.Windows.Forms.PictureBox();
@@ -39,6 +40,8 @@
             this.btnRight = new System.Windows.Forms.PictureBox();
             this.btnDown = new System.Windows.Forms.PictureBox();
             this.btnUp = new System.Windows.Forms.PictureBox();
+            this.grpPieces.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.remotePic)).BeginInit();
             this.grpSelectPiece.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnPlus)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnMinus)).BeginInit();
@@ -52,12 +55,26 @@
             // 
             // grpPieces
             // 
+            this.grpPieces.Controls.Add(this.remotePic);
             this.grpPieces.Location = new System.Drawing.Point(12, 12);
             this.grpPieces.Name = "grpPieces";
             this.grpPieces.Size = new System.Drawing.Size(344, 347);
             this.grpPieces.TabIndex = 1;
             this.grpPieces.TabStop = false;
             this.grpPieces.Text = "Pieces";
+            // 
+            // remotePic
+            // 
+            this.remotePic.Location = new System.Drawing.Point(2, 20);
+            this.remotePic.Name = "remotePic";
+            this.remotePic.Size = new System.Drawing.Size(340, 320);
+            this.remotePic.TabIndex = 0;
+            this.remotePic.TabStop = false;
+            this.remotePic.Paint += new System.Windows.Forms.PaintEventHandler(this.remotePic_Paint);
+            this.remotePic.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.remotePic_MouseDoubleClick);
+            this.remotePic.MouseDown += new System.Windows.Forms.MouseEventHandler(this.remotePic_MouseDown);
+            this.remotePic.MouseMove += new System.Windows.Forms.MouseEventHandler(this.remotePic_MouseMove);
+            this.remotePic.MouseUp += new System.Windows.Forms.MouseEventHandler(this.remotePic_MouseUp);
             // 
             // grpSelectPiece
             // 
@@ -169,7 +186,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(584, 368);
+            this.ClientSize = new System.Drawing.Size(584, 367);
             this.ControlBox = false;
             this.Controls.Add(this.grpControl);
             this.Controls.Add(this.grpSelectPiece);
@@ -182,6 +199,8 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Điều khiển";
             this.LocationChanged += new System.EventHandler(this.Remote_LocationChanged);
+            this.grpPieces.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.remotePic)).EndInit();
             this.grpSelectPiece.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.btnPlus)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnMinus)).EndInit();
@@ -207,5 +226,6 @@
         private System.Windows.Forms.PictureBox btnDown;
         private System.Windows.Forms.PictureBox btnUp;
         public System.Windows.Forms.Label lblSelected;
+        public System.Windows.Forms.PictureBox remotePic;
     }
 }

@@ -37,9 +37,12 @@
             this.lblRow = new System.Windows.Forms.Label();
             this.lblCol = new System.Windows.Forms.Label();
             this.grpMain = new System.Windows.Forms.GroupBox();
+            this.mainPic = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.numCol)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRow)).BeginInit();
             this.grpOption.SuspendLayout();
+            this.grpMain.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.mainPic)).BeginInit();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -147,6 +150,7 @@
             // 
             // grpMain
             // 
+            this.grpMain.Controls.Add(this.mainPic);
             this.grpMain.Location = new System.Drawing.Point(12, 68);
             this.grpMain.Name = "grpMain";
             this.grpMain.Size = new System.Drawing.Size(500, 412);
@@ -154,11 +158,23 @@
             this.grpMain.TabStop = false;
             this.grpMain.Text = "Main";
             // 
+            // mainPic
+            // 
+            this.mainPic.Location = new System.Drawing.Point(5, 15);
+            this.mainPic.Name = "mainPic";
+            this.mainPic.Size = new System.Drawing.Size(490, 394);
+            this.mainPic.TabIndex = 0;
+            this.mainPic.TabStop = false;
+            this.mainPic.Paint += new System.Windows.Forms.PaintEventHandler(this.mainPic_Paint);
+            this.mainPic.MouseDown += new System.Windows.Forms.MouseEventHandler(this.mainPic_MouseDown);
+            this.mainPic.MouseMove += new System.Windows.Forms.MouseEventHandler(this.mainPic_MouseMove);
+            this.mainPic.MouseUp += new System.Windows.Forms.MouseEventHandler(this.mainPic_MouseUp);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(524, 489);
+            this.ClientSize = new System.Drawing.Size(524, 488);
             this.Controls.Add(this.grpMain);
             this.Controls.Add(this.grpOption);
             this.DoubleBuffered = true;
@@ -173,6 +189,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.numRow)).EndInit();
             this.grpOption.ResumeLayout(false);
             this.grpOption.PerformLayout();
+            this.grpMain.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.mainPic)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -188,6 +206,7 @@
         private System.Windows.Forms.Label lblRow;
         private System.Windows.Forms.Label lblCol;
         public System.Windows.Forms.GroupBox grpMain;
+        public System.Windows.Forms.PictureBox mainPic;
     }
 }
 
