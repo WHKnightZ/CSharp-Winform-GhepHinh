@@ -6,6 +6,7 @@ namespace GhepHinh
     {
         public PieceBitmap mainPiece, remotePiece;
         public int index;
+        public int x, y;
         public int direction;
         public bool isActive;
 

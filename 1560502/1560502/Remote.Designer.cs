@@ -65,6 +65,7 @@
             // 
             // remotePic
             // 
+            this.remotePic.Enabled = false;
             this.remotePic.Location = new System.Drawing.Point(2, 20);
             this.remotePic.Name = "remotePic";
             this.remotePic.Size = new System.Drawing.Size(340, 320);
@@ -186,7 +187,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(584, 367);
+            this.ClientSize = new System.Drawing.Size(584, 368);
             this.ControlBox = false;
             this.Controls.Add(this.grpControl);
             this.Controls.Add(this.grpSelectPiece);

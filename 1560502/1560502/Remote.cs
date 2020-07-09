@@ -126,9 +126,6 @@ namespace GhepHinh
                 // tạo highlight ảnh mới
                 selectedPiece.remotePiece.isHighlight = true;
 
-                // khi click vào ảnh thì phải đổi chỉ số bên form Remote
-                //frmRemote.changeIndex(map1[selected]);
-
                 remotePic.Invalidate();
             }
             else if (e.Button == MouseButtons.Right)
@@ -173,9 +170,6 @@ namespace GhepHinh
                 if (selectedPiece == null)
                     return;
 
-                // xóa bức ảnh bên Remote
-
-
                 //cần xoay bức ảnh bên main cho đúng chiều bên remote
                 switch (selectedPiece.direction)
                 {
@@ -191,14 +185,14 @@ namespace GhepHinh
                 parent.selectedPiece = selectedPiece;
                 selectedPiece.isActive = true;
                 parent.selectedPiece.mainPiece.isHighlight = true;
-                parent.clamp(ref parent.selectedPiece.mainPiece.rect);
+                parent.clamp();
 
-                //parent.checkPiece(s);
+                parent.checkPiece();
 
                 //cài đặt ánh xạ
-                //parent.map1[s] = parent.indexPiece;
-                //parent.map2[parent.indexPiece] = s;
-                //parent.indexPiece++;
+                parent.map1[selectedPiece.index] = parent.indexPiece;
+                parent.map2[parent.indexPiece] = selectedPiece.index;
+                parent.indexPiece++;
 
                 changeIndex(parent.indexPiece - 1);
 
@@ -214,14 +208,14 @@ namespace GhepHinh
         {
             if (parent.indexPiece > 1)
                 changeIndex(index - 1);
-            //parent.changeHighLight(parent.map2[index]);
+            parent.changePiece(parent.map2[index]);
         }
 
         private void btnPlus_MouseDown(object sender, MouseEventArgs e)
         {
             if (parent.indexPiece > 1)
                 changeIndex(index + 1);
-            //parent.changeHighLight(parent.map2[index]);
+            parent.changePiece(parent.map2[index]);
         }
 
         private void btnRotate_MouseDown(object sender, MouseEventArgs e)
@@ -232,55 +226,52 @@ namespace GhepHinh
         // dịch ảnh theo từng ô, công thêm một lượng bằng kích thước 1 ô WP và HP
         private void translate(int x, int y)
         {
-            //PictureBox pic = parent.picBox[parent.selected];
-            //int left = pic.Left, top = pic.Top;
-            //left += x;
-            //top += y;
+            parent.selectedPiece.x += x;
+            parent.selectedPiece.y += y;
 
-            //// check biên phòng trường hợp số quá to đi ra hẳn màn hình
-            //if (left < 10) left = 10;
-            //else if (left > 490 - parent.WP) left = 490 - parent.WP;
-            //if (top < 20) top = 20;
-            //else if (top > 404 - parent.HP) top = 404 - parent.HP;
+            int left = parent.selectedPiece.mainPiece.rect.Left, top = parent.selectedPiece.mainPiece.rect.Top;
+            left += x * parent.WP;
+            top += y * parent.HP;
 
-            //// tự khớp ảnh và check biên
-            //parent.fit(pic, ref left, ref top);
-            ////parent.clamp(pic, ref left, ref top);
-            //pic.Location = new Point(left, top);
+            parent.selectedPiece.mainPiece.rect.Location = new Point(left, top);
 
-            //parent.checkPiece(parent.selected);
+            parent.clamp();
+
+            parent.checkPiece();
+
+            parent.mainPic.Invalidate();
         }
 
         private void btnLeft_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (parent.selected != -1)
-            //{
-            //    translate(-parent.WP, 0);
-            //}
+            if (parent.selectedPiece != null && parent.selectedPiece.x > 0)
+            {
+                translate(-1, 0);
+            }
         }
 
         private void btnRight_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (parent.selected != -1)
-            //{
-            //    translate(parent.WP, 0);
-            //}
+            if (parent.selectedPiece != null && parent.selectedPiece.x < parent.col - 1)
+            {
+                translate(1, 0);
+            }
         }
 
         private void btnUp_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (parent.selected != -1)
-            //{
-            //    translate(0, -parent.HP);
-            //}
+            if (parent.selectedPiece != null && parent.selectedPiece.y > 0)
+            {
+                translate(0, -1);
+            }
         }
 
         private void btnDown_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (parent.selected != -1)
-            //{
-            //    translate(0, parent.HP);
-            //}
+            if (parent.selectedPiece != null && parent.selectedPiece.y < parent.row - 1)
+            {
+                translate(0, 1);
+            }
         }
 
         private void Remote_LocationChanged(object sender, EventArgs e)

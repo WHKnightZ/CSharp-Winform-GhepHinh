@@ -11,6 +11,10 @@ namespace GhepHinh
 {
     public partial class Main : Form
     {
+        // mỗi mảnh ghép phải vẽ highlight ở biên, mảnh ghép đó sẽ to lên 
+        // một chút nên phải có thêm một cái offset 
+        private const int OFFSET = 5;
+
         // form Điều khiển
         private Remote frmRemote;
 
@@ -18,7 +22,7 @@ namespace GhepHinh
         private Help frmHelp;
 
         // số cột, hàng của bức ảnh
-        private int col, row;
+        public int col, row;
 
         // để random giá trị cần
         private Random random = new Random();
@@ -59,9 +63,14 @@ namespace GhepHinh
         // và cần một biến để đếm thứ tự mảnh, bắt đầu từ 1
         public int indexPiece = 1;
 
-        //
+        // Lưu thông tin các mảnh ghép
         public List<Piece> pieces = new List<Piece>();
+
+        // Mảnh ghép đang được chọn
         public Piece selectedPiece = null;
+
+        // Lưu Image lúc đầu để về sau khi win sẽ vẽ lại picBox bằng ảnh này
+        public Bitmap image;
 
         public Main()
         {
@@ -83,27 +92,19 @@ namespace GhepHinh
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
-            //// còn ảnh nào thì xóa hết ảnh đấy đi
-            //for (int i = 0; i < countPieces; i++)
-            //{
-            //    if (picBox[i] != null)
-            //        picBox[i].Dispose();
-            //    if (frmRemote.picBox[i] != null)
-            //        frmRemote.picBox[i].Dispose();
-            //}
-
-            //// gán lại các trạng thái lúc đầu của các form
-            //selected = -1;
-            //frmRemote.selected = -1;
-            //indexPiece = 1;
-            //frmRemote.index = 0;
-            //frmRemote.lblSelected.Text = "0";
+            pieces.Clear();
+            countPieces = 0;
+            selectedPiece = null;
+            frmRemote.selectedPiece = null;
+            indexPiece = 1;
+            frmRemote.index = 0;
+            frmRemote.lblSelected.Text = "0";
+            mainPic.Image = null;
         }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
             openFileDialog.ShowDialog();
-
         }
 
         private List<PieceBitmap> splitImage(Bitmap img)
@@ -139,7 +140,7 @@ namespace GhepHinh
                     int k = (i + j) % 2 == 0 ? 1 : -1;
 
                     // Vẽ đường bên trên
-                    yo = 5;
+                    yo = OFFSET;
                     if (i == 0) path.AddLine(left, top, right, top);
                     else
                     {
@@ -151,7 +152,7 @@ namespace GhepHinh
                     }
 
                     // Vẽ đường bên phải
-                    xo2 = 5;
+                    xo2 = OFFSET;
                     if (j == col - 1) path.AddLine(right, top, right, bottom);
                     else
                     {
@@ -163,7 +164,7 @@ namespace GhepHinh
                     }
 
                     // Vẽ đường bên dưới
-                    yo2 = 5;
+                    yo2 = OFFSET;
                     if (i == row - 1) path.AddLine(right, bottom, left, bottom);
                     else
                     {
@@ -175,7 +176,7 @@ namespace GhepHinh
                     }
 
                     // Vẽ đường bên trái
-                    xo = 5;
+                    xo = OFFSET;
                     if (j == 0) path.AddLine(left, bottom, left, top);
                     else
                     {
@@ -212,7 +213,7 @@ namespace GhepHinh
                     g2.FillPath(brush, path);
                     g2.DrawPath(pHighlight, path);
 
-                    pieceBitmaps.Add(new PieceBitmap(bmp, bmp2, new Rectangle(0, 0, wf, hf)));
+                    pieceBitmaps.Add(new PieceBitmap(bmp, bmp2, new Rectangle(0, 0, wf, hf), new Point((xo2 - xo) / 2, (yo2 - yo) / 2)));
                 }
             }
             return pieceBitmaps;
@@ -220,12 +221,10 @@ namespace GhepHinh
 
         private void openFileDialog_FileOk(object sender, CancelEventArgs e)
         {
-            Image image;
-
             // phòng trường hợp người dùng ko chọn tập tin hình ảnh, sử dụng một try catch để bắt lỗi
             try
             {
-                image = Image.FromFile(openFileDialog.FileName);
+                image = (Bitmap)Image.FromFile(openFileDialog.FileName);
             }
             catch
             {
@@ -240,6 +239,9 @@ namespace GhepHinh
             frmHelp.pictureBox.Image = image;
             col = (int)numCol.Value;
             row = (int)numRow.Value;
+
+            WP = WM / col;
+            HP = HM / row;
 
             countPieces = col * row;
             map = new bool[countPieces];
@@ -256,12 +258,15 @@ namespace GhepHinh
             Graphics gRemote = Graphics.FromImage(srcRemote);
             gRemote.DrawImage(image, new Rectangle(0, 0, WR, HR));
 
-            pieces = new List<Piece>();
+            // Danh sách các mảnh ở form Main và Remote
             List<PieceBitmap> p1 = splitImage(srcMain);
             List<PieceBitmap> p2 = splitImage(srcRemote);
 
             int direction;
 
+            // tổng hợp 2 danh sách thành một danh sách mới, có các thông số chung như direction, index
+            // ở đây cũng sẽ đảo ngẫu nhiên vị trí và hướng xoay của các mảnh bên form Remote
+            // đồng thời tính tâm của các mảnh trong form Main
             for (int i = 0; i < countPieces; i++)
             {
                 p2[i].rect.Location = new Point(random.Next(frmRemote.remotePic.Width), random.Next(frmRemote.remotePic.Height));
@@ -275,12 +280,32 @@ namespace GhepHinh
                 }
                 frmRemote.clamp(ref p2[i].rect);
                 pieces.Add(new Piece(p1[i], p2[i], i, direction));
+
+                int x = i % col, y = i / col;
+                int x2 = x * WP + p1[i].rect.Width / 2;
+                int y2 = y * HP + p1[i].rect.Height / 2;
             }
+
+            mainPic.Enabled = true;
+            frmRemote.remotePic.Enabled = true;
 
             // chọn xong ảnh thì show form Remote và cho phép dùng Help
             frmRemote.Show();
+
+            // thêm một cái pieces bên Remote tham chiếu đến pieces bên này để đỡ phải viết nhiều,
+            // ko có thì ở bên kia muốn dùng sẽ phải gọi parent.pieces
             frmRemote.pieces = pieces;
+
+            // hàm invalidate để vẽ lại pictureBox
+            mainPic.Invalidate();
             frmRemote.remotePic.Invalidate();
+
+            // vẽ lại Image mới tịnh tiến thêm OFFSET pixel, để khi win, image ko bị lệch
+            Bitmap bmp = new Bitmap(mainPic.Width, mainPic.Height);
+            Graphics g = Graphics.FromImage(bmp);
+            g.DrawImage(image, OFFSET - 3, OFFSET - 3);
+            image = bmp;
+
             cbHelp.Enabled = true;
         }
 
@@ -300,21 +325,30 @@ namespace GhepHinh
         }
 
         // hàm khớp vị trí cho các mảnh ghép, được gọi mỗi khi nhả chuột
-        public void fit(PictureBox p, ref int left, ref int top)
+        public void fit()
         {
+            Rectangle r = selectedPiece.mainPiece.rect;
+
             // lấy tâm của piece / kích thước piece => tọa độ theo hàng cột
             // để ý ở đây là lấy phần nguyên (int / int => int chứ ko phải float)
-            // -10 và -20 ở đây là xóa đi margin left và top
-            int col = (left + (p.Width / 2) - 10) / WP;
-            int row = (top + (p.Height / 2) - 20) / HP;
+            int left = r.X, top = r.Y;
+            int col = (left + (r.Width / 2) - OFFSET) / WP;
+            int row = (top + (r.Height / 2) - OFFSET) / HP;
 
-            left = col * WP + WP / 2 - p.Width / 2 + 10; // col * WP => tọa độ thật của ô, cộng thêm WP / 2 => tọa độ tâm
-            top = row * HP + HP / 2 - p.Height / 2 + 20; // đương nhiên phải bù lại margin left và top
+            left = col * WP + WP / 2 - r.Width / 2 + selectedPiece.mainPiece.offsetCenter.X + OFFSET;
+            top = row * HP + HP / 2 - r.Height / 2 + selectedPiece.mainPiece.offsetCenter.Y + OFFSET;
+
+            selectedPiece.mainPiece.rect.Location = new Point(left, top);
+
+            selectedPiece.x = col;
+            selectedPiece.y = row;
         }
 
         // hàm này để giới hạn biên cho bức ảnh, ko thể ra ngoài mainPic
-        public void clamp(ref Rectangle r)
+        public void clamp()
         {
+            Rectangle r = selectedPiece.mainPiece.rect;
+
             int left = r.X;
             int top = r.Y;
             if (left < 0) left = 0; // biên trái là 0
@@ -324,7 +358,8 @@ namespace GhepHinh
             // được nên cần thông qua left và top, để ý thì left + p.Width chính là right ...
             if (left + r.Width > mainPic.Width) left = mainPic.Width - r.Width;
             if (top + r.Height > mainPic.Height) top = mainPic.Height - r.Height;
-            r.Location = new Point(left, top);
+
+            selectedPiece.mainPiece.rect.Location = new Point(left, top);
         }
 
         public void rotate()
@@ -334,11 +369,14 @@ namespace GhepHinh
                 selectedPiece.mainPiece.rotateLeft();
                 selectedPiece.direction++;
 
-                clamp(ref selectedPiece.mainPiece.rect);
+                fit();
+                clamp();
 
                 if (selectedPiece.direction == 4)
                     selectedPiece.direction = 0;
                 mainPic.Invalidate();
+
+                checkPiece();
             }
         }
 
@@ -350,6 +388,31 @@ namespace GhepHinh
                 if (piece.isActive)
                     g.DrawImage(piece.mainPiece.GetBmp, piece.mainPiece.rect);
             }
+        }
+
+        public void changePiece(int index)
+        {
+            if (selectedPiece != null)
+                selectedPiece.mainPiece.isHighlight = false;
+
+            Piece piece = null;
+            foreach (Piece p in pieces)
+            {
+                if (p.index == index)
+                {
+                    piece = p;
+                    break;
+                }
+            }
+            // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
+            // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
+            selectedPiece = piece;
+            selectedPiece.mainPiece.isHighlight = true;
+
+            pieces.Remove(selectedPiece);
+            pieces.Add(selectedPiece);
+
+            mainPic.Invalidate();
         }
 
         private Piece getPieceByMouse(int x, int y)
@@ -394,7 +457,8 @@ namespace GhepHinh
                 selectedPiece.mainPiece.isHighlight = true;
 
                 // khi click vào ảnh thì phải đổi chỉ số bên form Remote
-                //frmRemote.changeIndex(map1[selected]);
+                frmRemote.changeIndex(map1[selectedPiece.index]);
+
                 mainPic.Invalidate();
             }
             else if (e.Button == MouseButtons.Right)
@@ -412,18 +476,15 @@ namespace GhepHinh
 
                 // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
 
-                //if (selected != -1)
-                //{
-                //    PictureBox pic = picBox[selected];
-                //    int left = pic.Left, top = pic.Top;
+                if (selectedPiece != null)
+                {
+                    // tự khớp ảnh và check biên
+                    fit();
+                    clamp();
 
-                //    // tự khớp ảnh và check biên
-                //    fit(pic, ref left, ref top);
-                //    clamp(pic, ref left, ref top);
-                //    pic.Location = new Point(left, top);
-
-                //    checkPiece(selected);
-                //}
+                    mainPic.Invalidate();
+                    checkPiece();
+                }
             }
         }
 
@@ -441,35 +502,12 @@ namespace GhepHinh
                 currentY = e.Y;
 
                 // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
-                clamp(ref selectedPiece.mainPiece.rect);
+                clamp();
 
                 // Invalidate để vẽ lại pictureBox
                 mainPic.Invalidate();
             }
         }
-
-        //public void pictureBox_MouseUp(object sender, MouseEventArgs e)
-        //{
-        //    if (e.Button == MouseButtons.Left)
-        //    {
-        //        isDragging = false;
-
-        //        // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
-
-        //        if (selected != -1)
-        //        {
-        //            PictureBox pic = picBox[selected];
-        //            int left = pic.Left, top = pic.Top;
-
-        //            // tự khớp ảnh và check biên
-        //            fit(pic, ref left, ref top);
-        //            clamp(pic, ref left, ref top);
-        //            pic.Location = new Point(left, top);
-
-        //            checkPiece(selected);
-        //        }
-        //    }
-        //}
 
         public bool checkWin()
         {
@@ -480,32 +518,34 @@ namespace GhepHinh
             return true;
         }
 
-        public void checkPiece(int s)
+        public void checkPiece()
         {
-            //PictureBox p = picBox[s];
-            //int left = p.Left, top = p.Top;
-            //int col = (left + (p.Width / 2) - 10) / WP;
-            //int row = (top + (p.Height / 2) - 20) / HP;
+            int index = selectedPiece.index;
+            int x = index % col;
+            int y = index / col;
 
-            //// nếu hướng của mảnh là 0 đồng thời mảnh đó nằm đúng hàng cột thì mảnh đó Ok
-            //if (direction[s] == 0 && col == pos[s].X && row == pos[s].Y)
-            //{
-            //    map[s] = true;
+            // nếu hướng của mảnh là 0 đồng thời mảnh đó nằm đúng hàng cột thì mảnh đó Ok
+            if (selectedPiece.direction == 0 && selectedPiece.x == x && selectedPiece.y == y)
+            {
+                map[index] = true;
 
-            //    // check xong mảnh đó rồi thì check win luôn
-            //    if (checkWin())
-            //    {
-            //        picBox[selected].Image = old;
-            //        for (int i = 0; i < countPieces; i++)
-            //        {
-            //            // ko cho click vào ảnh nữa
-            //            picBox[i].Enabled = false;
-            //        }
-            //        MessageBox.Show("Bạn đã thắng!", "Thông báo");
-            //    }
-            //}
-            //else
-            //    map[s] = false;
+                // check xong mảnh đó rồi thì check win luôn
+                if (checkWin())
+                {
+                    mainPic.Image = image;
+                    countPieces = 0;
+                    pieces.Clear();
+                    selectedPiece = null;
+                    mainPic.Enabled = false;
+                    frmRemote.remotePic.Enabled = false;
+
+                    mainPic.Invalidate();
+
+                    MessageBox.Show("Bạn đã thắng!", "Thông báo");
+                }
+            }
+            else
+                map[index] = false;
         }
 
         private void Main_LocationChanged(object sender, EventArgs e)

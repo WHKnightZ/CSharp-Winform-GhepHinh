@@ -160,7 +160,8 @@
             // 
             // mainPic
             // 
-            this.mainPic.Location = new System.Drawing.Point(5, 15);
+            this.mainPic.Enabled = false;
+            this.mainPic.Location = new System.Drawing.Point(5, 14);
             this.mainPic.Name = "mainPic";
             this.mainPic.Size = new System.Drawing.Size(490, 394);
             this.mainPic.TabIndex = 0;
@@ -174,7 +175,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(524, 488);
+            this.ClientSize = new System.Drawing.Size(524, 489);
             this.Controls.Add(this.grpMain);
             this.Controls.Add(this.grpOption);
             this.DoubleBuffered = true;
