@@ -107,14 +107,20 @@ namespace GhepHinh
             openFileDialog.ShowDialog();
         }
 
+        // chia bức ảnh được chọn thành các miếng nhỏ
         private List<PieceBitmap> splitImage(Bitmap img)
         {
             List<PieceBitmap> pieceBitmaps = new List<PieceBitmap>();
 
             int w = img.Width / col;
             int h = img.Height / row;
+
+            // w là chiều rộng, cao của mảnh ghép khi chưa tính cái phần lồi ra, lõm vào, khi tính cả
+            // phần lồi ra lõm vào thì sẽ có kích thước full chính là wf, hf, còn xo có thể coi là kích thước
+            // của phần lồi ra đấy, = OFFSET khi ko lồi, bằng w*0.3 khi lồi
             int wf, hf, xo, yo, xo2, yo2;
 
+            // để tạo ra các cái phần lồi, lõm thì cần cắt ảnh ban đầu theo các đường cong, dựa theo các điểm bên dưới
             int[] horizontalsX = { 0, (int)(w * 0.4f), (int)(w * 0.38f), (int)(w * 0.5f), (int)(w * 0.62f), (int)(w * 0.6f), w };
             int[] horizontalsY = { 0, 0, (int)(h * 0.2f), (int)(h * 0.25f), (int)(h * 0.2f), 0, 0 };
 
@@ -133,6 +139,7 @@ namespace GhepHinh
             {
                 for (int j = 0; j < col; j++)
                 {
+                    // lớp này để tạo đường cong cắt ảnh
                     GraphicsPath path = new GraphicsPath();
 
                     int left = j * w, top = i * h;

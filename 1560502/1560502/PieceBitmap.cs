@@ -4,9 +4,13 @@ namespace GhepHinh
 {
     public class PieceBitmap
     {
+        // lưu lại ảnh khi ko có highlight và có highlight
         private Bitmap bmp, bmpHighlight;
 
+        // khu vực vẽ của mỗi mảnh
         public Rectangle rect;
+
+        // mảnh ghép đó bị lệch so với tâm bao nhiêu (mỗi mảnh có thể bị lồi ra, lõm vào nên bị lệch so với tâm một khoảng)
         public Point offsetCenter;
         public bool isHighlight;
 
@@ -27,6 +31,8 @@ namespace GhepHinh
             }
         }
 
+        // khi xoay trái thì phải xoay cả 2 ảnh có highlight và ko, chiều W, H sẽ bị đảo cho nhau,
+        // do cần xoay tại tâm nên phải sử dụng công thức dưới
         public void rotateLeft()
         {
             bmp.RotateFlip(RotateFlipType.Rotate270FlipNone);
