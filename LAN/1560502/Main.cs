@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Net;
+using System.Net.Sockets;
 using System.Windows.Forms;
 
 // ở v1, sử dụng 1 list các pictureBox, tuy nhiên ở v2 đã thay hết list pictureBox thành một pictureBox
@@ -20,10 +22,10 @@ namespace GhepHinh
         private const int OFFSET = 5;
 
         // form Điều khiển
-        private Remote frmRemote;
+        public Remote frmRemote;
 
         // form Giúp đỡ
-        private Help frmHelp;
+        public Help frmHelp;
 
         // số cột, hàng của bức ảnh
         public int col, row;
@@ -73,9 +75,30 @@ namespace GhepHinh
         // Lưu Image lúc đầu để về sau khi win sẽ vẽ lại picBox bằng ảnh này
         public Bitmap image;
 
+        // IP
+        public string IP;
+
+        //
+        public bool isServer;
+        public Server server;
+        public Client client;
+
         public Main()
         {
             InitializeComponent();
+
+            IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
+            foreach (IPAddress address in localIP)
+            {
+                if (address.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    IP = address.ToString();
+                    lblIP.Text = "IP: " + IP;
+                    break;
+                }
+            }
+
+            CheckForIllegalCrossThreadCalls = false;
 
             frmRemote = new Remote();
 
@@ -93,6 +116,11 @@ namespace GhepHinh
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
+            if (server != null)
+                server.Close();
+            if (client != null)
+                client.Close();
+
             pieces.Clear();
             countPieces = 0;
             selectedPiece = null;
@@ -105,7 +133,29 @@ namespace GhepHinh
 
         private void btnStart_Click(object sender, EventArgs e)
         {
-            openFileDialog.ShowDialog();
+            Choose choose = new Choose();
+            var result = choose.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                if (choose.isServer)
+                    openFileDialog.ShowDialog();
+                else
+                {
+                    InputIP input = new InputIP(IP);
+                    var result2 = input.ShowDialog();
+                    if (result2 == DialogResult.OK)
+                    {
+                        reset();
+                        IP = input.IP;
+                        isServer = false;
+                        client = new Client(this, frmRemote, frmHelp, IP);
+                        if (!client.isActive)
+                            return;
+
+                        this.Text = "Ghép hình - Khách";
+                    }
+                }
+            }
         }
 
         // chia bức ảnh được chọn thành các miếng nhỏ
@@ -247,6 +297,13 @@ namespace GhepHinh
 
             // chọn xong ảnh thì reset mọi thứ trước
             reset();
+            
+            isServer = true;
+            server = new Server(this, frmRemote, frmHelp);
+            if (!server.isActive)
+                return;
+
+            this.Text = "Ghép hình - Chủ";
 
             // gán bức ảnh ở form Help bằng ảnh đã chọn
             frmHelp.pictureBox.Image = image;
@@ -485,10 +542,15 @@ namespace GhepHinh
                 frmRemote.changeIndex(map1[selectedPiece.index]);
 
                 mainPic.Invalidate();
+
+                var data = new SelectData(selectedPiece.index);
+                Send(new SendObject(SendObject.SELECT_MAIN, data));
             }
             else if (e.Button == MouseButtons.Right)
             {
                 // khi bấm chuột phải, xoay ảnh
+                Send(new SendObject(SendObject.ROTATE_MAIN, null));
+
                 rotate();
             }
         }
@@ -508,6 +570,11 @@ namespace GhepHinh
                     clamp();
 
                     mainPic.Invalidate();
+
+                    var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
+                        selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
+                    Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+
                     checkPiece();
                 }
             }
@@ -531,6 +598,10 @@ namespace GhepHinh
 
                 // Invalidate để vẽ lại pictureBox
                 mainPic.Invalidate();
+
+                var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
+                        selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
+                Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
             }
         }
 
@@ -541,6 +612,23 @@ namespace GhepHinh
                 if (!map[i])
                     return false;
             return true;
+        }
+
+        public void win()
+        {
+            if (countPieces != 0)
+            {
+                countPieces = 0;
+                mainPic.Image = image;
+                pieces.Clear();
+                selectedPiece = null;
+                mainPic.Enabled = false;
+                frmRemote.remotePic.Enabled = false;
+
+                mainPic.Invalidate();
+
+                MessageBox.Show("Bạn đã thắng!", "Thông báo");
+            }
         }
 
         public void checkPiece()
@@ -557,16 +645,8 @@ namespace GhepHinh
                 // check xong mảnh đó rồi thì check win luôn
                 if (checkWin())
                 {
-                    mainPic.Image = image;
-                    countPieces = 0;
-                    pieces.Clear();
-                    selectedPiece = null;
-                    mainPic.Enabled = false;
-                    frmRemote.remotePic.Enabled = false;
-
-                    mainPic.Invalidate();
-
-                    MessageBox.Show("Bạn đã thắng!", "Thông báo");
+                    Send(new SendObject(SendObject.WIN, null));
+                    win();
                 }
             }
             else
@@ -581,5 +661,118 @@ namespace GhepHinh
                 frmRemote.Location = new Point(Width + Left + 10, Top);
         }
 
+        // Mạng LAN
+
+        public void Send(SendObject obj)
+        {
+            if (isServer)
+                server.Send(obj);
+            else
+                client.Send(obj);
+        }
+
+        public void EventInit(InitData data)
+        {
+            col = data.col;
+            row = data.row;
+            WP = data.WP;
+            HP = data.HP;
+            map = data.map;
+            map1 = data.map1;
+            map2 = data.map2;
+            indexPiece = data.indexPiece;
+            pieces = data.pieces;
+            selectedPiece = data.selectedPiece;
+            image = data.image;
+            frmRemote.index = data.remoteIndex;
+            frmRemote.pieces = data.pieces;
+            frmRemote.selectedPiece = data.selectedPiece;
+            countPieces = data.pieces.Count;
+
+            frmHelp.pictureBox.Image = data.image;
+
+            mainPic.Enabled = true;
+            frmRemote.remotePic.Enabled = true;
+
+            Invoke((MethodInvoker)delegate ()
+            {
+                frmRemote.Show();
+            });
+
+            mainPic.Invalidate();
+            frmRemote.remotePic.Invalidate();
+
+            cbHelp.Enabled = true;
+
+            numCol.Value = data.col;
+            numRow.Value = data.row;
+
+            frmRemote.lblSelected.Text = data.remoteIndex.ToString();
+        }
+
+        public void EventSelectRemote(SelectData data)
+        {
+            if (frmRemote.selectedPiece != null)
+                frmRemote.selectedPiece.remotePiece.isHighlight = false;
+            foreach (Piece piece in pieces)
+            {
+                if (piece.index == data.index)
+                {
+                    frmRemote.selectedPiece = piece;
+                    pieces.Remove(piece);
+                    pieces.Add(piece);
+                    piece.remotePiece.isHighlight = true;
+                    frmRemote.remotePic.Invalidate();
+                    return;
+                }
+            }
+        }
+
+        public void EventTranslateRemote(TranslateData data)
+        {
+            frmRemote.selectedPiece.remotePiece.rect.Location = new Point(data.left, data.top);
+            frmRemote.remotePic.Invalidate();
+        }
+
+        public void EventRotateRemote()
+        {
+            frmRemote.rotate();
+        }
+
+        public void EventAppendMain()
+        {
+            frmRemote.append();
+        }
+
+        public void EventSelectMain(SelectData data)
+        {
+            foreach (Piece piece in pieces)
+            {
+                if (piece.index == data.index)
+                {
+                    changePiece(data.index);
+                    frmRemote.changeIndex(map1[data.index]);
+                    return;
+                }
+            }
+        }
+
+        public void EventTranslateMain(TranslateData data)
+        {
+            selectedPiece.x = data.x;
+            selectedPiece.y = data.y;
+            selectedPiece.mainPiece.rect.Location = new Point(data.left, data.top);
+            mainPic.Invalidate();
+        }
+
+        public void EventRotateMain()
+        {
+            rotate();
+        }
+
+        public void EventWin()
+        {
+            win();
+        }
     }
 }

@@ -1,7 +1,8 @@
-﻿using System.Drawing;
+﻿using System;
 
 namespace GhepHinh
 {
+    [Serializable]
     public class Piece
     {
         // lưu ảnh và vùng vẽ mảnh ghép

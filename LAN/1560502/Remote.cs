@@ -54,6 +54,42 @@ namespace GhepHinh
             }
         }
 
+        public void append()
+        {
+            //cần xoay bức ảnh bên main cho đúng chiều bên remote
+            switch (selectedPiece.direction)
+            {
+                case 1: selectedPiece.mainPiece.rotateLeft(); break;
+                case 2: selectedPiece.mainPiece.rotate180(); break;
+                case 3: selectedPiece.mainPiece.rotateRight(); break;
+                default: break;
+            }
+
+            // xóa highlight cũ đi và tạo highlight mới
+            if (parent.selectedPiece != null)
+                parent.selectedPiece.mainPiece.isHighlight = false;
+
+            parent.selectedPiece = selectedPiece;
+            selectedPiece.isActive = true;
+            parent.selectedPiece.mainPiece.isHighlight = true;
+            parent.clamp();
+
+            parent.checkPiece();
+
+            //cài đặt ánh xạ
+            parent.map1[selectedPiece.index] = parent.indexPiece;
+            parent.map2[parent.indexPiece] = selectedPiece.index;
+            parent.indexPiece++;
+
+            changeIndex(parent.indexPiece - 1);
+
+            selectedPiece = null;
+
+            // đưa ảnh sang thì ảnh bên form remote và main đều thay đổi nên cần cập nhật lại
+            parent.mainPic.Invalidate();
+            remotePic.Invalidate();
+        }
+
         // hàm này để sửa chỉ số trong label Selected
         public void changeIndex(int i)
         {
@@ -119,9 +155,13 @@ namespace GhepHinh
                 selectedPiece.remotePiece.isHighlight = true;
 
                 remotePic.Invalidate();
+
+                var data = new SelectData(selectedPiece.index);
+                parent.Send(new SendObject(SendObject.SELECT_REMOTE, data));
             }
             else if (e.Button == MouseButtons.Right)
             {
+                parent.Send(new SendObject(SendObject.ROTATE_REMOTE, null));
                 rotate();
             }
         }
@@ -152,6 +192,9 @@ namespace GhepHinh
 
                 // Invalidate để vẽ lại pictureBox
                 remotePic.Invalidate();
+
+                var data = new TranslateData(selectedPiece.remotePiece.rect.Left, selectedPiece.remotePiece.rect.Top);
+                parent.Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
             }
         }
 
@@ -163,38 +206,8 @@ namespace GhepHinh
                 if (selectedPiece == null)
                     return;
 
-                //cần xoay bức ảnh bên main cho đúng chiều bên remote
-                switch (selectedPiece.direction)
-                {
-                    case 1: selectedPiece.mainPiece.rotateLeft(); break;
-                    case 2: selectedPiece.mainPiece.rotate180(); break;
-                    case 3: selectedPiece.mainPiece.rotateRight(); break;
-                    default: break;
-                }
-
-                // xóa highlight cũ đi và tạo highlight mới
-                if (parent.selectedPiece != null)
-                    parent.selectedPiece.mainPiece.isHighlight = false;
-
-                parent.selectedPiece = selectedPiece;
-                selectedPiece.isActive = true;
-                parent.selectedPiece.mainPiece.isHighlight = true;
-                parent.clamp();
-
-                parent.checkPiece();
-
-                //cài đặt ánh xạ
-                parent.map1[selectedPiece.index] = parent.indexPiece;
-                parent.map2[parent.indexPiece] = selectedPiece.index;
-                parent.indexPiece++;
-
-                changeIndex(parent.indexPiece - 1);
-
-                selectedPiece = null;
-
-                // đưa ảnh sang thì ảnh bên form remote và main đều thay đổi nên cần cập nhật lại
-                parent.mainPic.Invalidate();
-                remotePic.Invalidate();
+                parent.Send(new SendObject(SendObject.APPEND_MAIN, null));
+                append();
             }
         }
 
@@ -203,18 +216,26 @@ namespace GhepHinh
         {
             if (parent.indexPiece > 1)
                 changeIndex(index - 1);
-            parent.changePiece(parent.map2[index]);
+
+            int i = parent.map2[index];
+            var data = new SelectData(i);
+            parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
+            parent.changePiece(i);
         }
 
         private void btnPlus_MouseDown(object sender, MouseEventArgs e)
         {
             if (parent.indexPiece > 1)
                 changeIndex(index + 1);
-            parent.changePiece(parent.map2[index]);
+            int i = parent.map2[index];
+            var data = new SelectData(i);
+            parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
+            parent.changePiece(i);
         }
 
         private void btnRotate_MouseDown(object sender, MouseEventArgs e)
         {
+            parent.Send(new SendObject(SendObject.ROTATE_MAIN, null));
             parent.rotate();
         }
 
@@ -231,6 +252,10 @@ namespace GhepHinh
             parent.selectedPiece.mainPiece.rect.Location = new Point(left, top);
 
             parent.clamp();
+
+            var data = new TranslateData(parent.selectedPiece.mainPiece.rect.Left,
+                parent.selectedPiece.mainPiece.rect.Top, parent.selectedPiece.x, parent.selectedPiece.y);
+            parent.Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
 
             parent.checkPiece();
 

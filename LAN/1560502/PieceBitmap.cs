@@ -1,7 +1,9 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace GhepHinh
 {
+    [Serializable]
     public class PieceBitmap
     {
         // lưu lại ảnh khi ko có highlight và có highlight
