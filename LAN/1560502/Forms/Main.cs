@@ -199,6 +199,8 @@ namespace GhepHinh
             int wf, hf, xo, yo, xo2, yo2;
 
             // để tạo ra các cái phần lồi, lõm thì cần cắt ảnh ban đầu theo các đường cong, dựa theo các điểm bên dưới
+            // hãy thử vẽ ra giấy, giả sử chọn một hình chữ nhật với kích thước w = 100, h = 100, xong lấy tọa độ các
+            // đỉnh như bên dưới (bao gồm horizontalsX và horizontalsY), nối lại sẽ được mảnh jigsaw puzzle
             int[] horizontalsX = { 0, (int)(w * 0.4f), (int)(w * 0.38f), (int)(w * 0.5f), (int)(w * 0.62f), (int)(w * 0.6f), w };
             int[] horizontalsY = { 0, 0, (int)(h * 0.2f), (int)(h * 0.25f), (int)(h * 0.2f), 0, 0 };
 

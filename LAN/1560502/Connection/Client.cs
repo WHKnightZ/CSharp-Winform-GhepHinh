@@ -43,6 +43,7 @@ namespace GhepHinh
             catch
             {
                 MessageBox.Show("IP không hợp lệ");
+                isActive = false;
                 return;
             }
 
