@@ -11,6 +11,15 @@ using System.Windows.Forms;
 // kèm theo sự kiện paint (vẽ lên pictureBox), chúng ta sẽ sử dụng lớp Graphics kèm theo 1 list các Bitmap
 // để vẽ lên pictureBox đó
 
+// với kết nối mạng LAN:
+// Connection/Server.cs: tạo server đợi các client kết nối, khi nhận được sự kiện từ client sẽ bắn sang các client còn lại
+// Connection/Client.cs: tạo client kết nối đến server
+// Connection/SendObject.cs: lưu object được gửi đi, object có thông tin event và data kèm theo
+// còn lại là các lớp để lưu thông tin data truyền đi, như là SelectData lưu mảnh được chọn, chỉ cần mỗi chỉ số
+// InitData thì lưu toàn bộ thông tin khởi tạo, khá nhiều thứ, TranslateData thì phải lưu tọa độ của hình chữ nhật
+
+// Có bổ sung thêm form InputIP để nhập IP, form Choose để chọn Chủ, Khách
+
 // khi chọn hình nên ưu tiên hình có kích thước >= 480x384, tỉ lệ 5:4 (kích thước ảnh sau resize là 480x384)
 
 namespace GhepHinh
@@ -78,15 +87,22 @@ namespace GhepHinh
         // IP
         public string IP;
 
-        //
+        // lưu server, client để tương tác giữa các máy, mỗi form chỉ có
+        // một trong 2 server hoặc client hoạt động, phụ thuộc vào isServer
         public bool isServer;
         public Server server;
         public Client client;
+
+        // mỗi khi có người đang kéo lê một mảnh ở form Main thì người khác
+        // ko thể điều khiển, cho đến khi người đó nhả mảnh, isLocked để khóa kéo lê
+        public bool isLocked;
 
         public Main()
         {
             InitializeComponent();
 
+            // lấy IP của máy mình để cho vào cái label ở góc, máy khác nhập cái
+            // IP này vào form để kết nối
             IPAddress[] localIP = Dns.GetHostAddresses(Dns.GetHostName());
             foreach (IPAddress address in localIP)
             {
@@ -98,6 +114,7 @@ namespace GhepHinh
                 }
             }
 
+            // nghe nói là để tránh xung đột khi nhiều thread cùng truy cập một tài nguyên
             CheckForIllegalCrossThreadCalls = false;
 
             frmRemote = new Remote();
@@ -116,11 +133,17 @@ namespace GhepHinh
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
+            // nếu server, client đã có thì phải giải phóng trước, chẳng hạn lúc game đang chơ mà chơi lại
             if (server != null)
                 server.Close();
             if (client != null)
                 client.Close();
 
+            // cho phép form hoạt động
+            isLocked = false;
+            frmRemote.isLocked = false;
+
+            // khởi tạo vài biến cơ bản
             pieces.Clear();
             countPieces = 0;
             selectedPiece = null;
@@ -133,10 +156,12 @@ namespace GhepHinh
 
         private void btnStart_Click(object sender, EventArgs e)
         {
+            // bật form chọn Chủ, Khách
             Choose choose = new Choose();
             var result = choose.ShowDialog();
             if (result == DialogResult.OK)
             {
+                // nếu là chủ thì cho chọn ảnh, khách thì yêu cầu nhập IP
                 if (choose.isServer)
                     openFileDialog.ShowDialog();
                 else
@@ -148,6 +173,8 @@ namespace GhepHinh
                         reset();
                         IP = input.IP;
                         isServer = false;
+
+                        // khởi tạo client, xem trong Connection/Client.cs để rõ hơn
                         client = new Client(this, frmRemote, frmHelp, IP);
                         if (!client.isActive)
                             return;
@@ -297,8 +324,10 @@ namespace GhepHinh
 
             // chọn xong ảnh thì reset mọi thứ trước
             reset();
-            
+
             isServer = true;
+
+            // khởi tạo server, xem Connection/Server.cs
             server = new Server(this, frmRemote, frmHelp);
             if (!server.isActive)
                 return;
@@ -365,12 +394,6 @@ namespace GhepHinh
             // hàm invalidate để vẽ lại pictureBox
             mainPic.Invalidate();
             frmRemote.remotePic.Invalidate();
-
-            // vẽ lại Image mới tịnh tiến thêm OFFSET pixel, để khi win, image ko bị lệch
-            Bitmap bmp = new Bitmap(mainPic.Width, mainPic.Height);
-            Graphics g = Graphics.FromImage(bmp);
-            g.DrawImage(image, OFFSET - 3, OFFSET - 3);
-            image = bmp;
 
             cbHelp.Enabled = true;
         }
@@ -511,97 +534,115 @@ namespace GhepHinh
 
         private void mainPic_MouseDown(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            // các sự kiện mouse, control bên form remote từ giờ sẽ bổ sung thêm check isLocked
+            // để xem có người khác đang điều khiển thì khóa ko cho form này dùng chuột được
+            if (!isLocked)
             {
-                // lấy ảnh được chọn theo tọa độ chuột
-                Piece piece = getPieceByMouse(e.X, e.Y);
-                if (piece == null)
-                    return;
+                if (e.Button == MouseButtons.Left)
+                {
+                    // lấy ảnh được chọn theo tọa độ chuột
+                    Piece piece = getPieceByMouse(e.X, e.Y);
+                    if (piece == null)
+                        return;
 
-                // xóa highlight ảnh cũ
-                if (selectedPiece != null)
-                    selectedPiece.mainPiece.isHighlight = false;
+                    // xóa highlight ảnh cũ
+                    if (selectedPiece != null)
+                        selectedPiece.mainPiece.isHighlight = false;
 
-                // được phép kéo dê ảnh
-                isDragging = true;
+                    // được phép kéo dê ảnh
+                    isDragging = true;
 
-                // lưu lại tọa độ chuột để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
-                currentX = e.X;
-                currentY = e.Y;
+                    // lưu lại tọa độ chuột để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
+                    currentX = e.X;
+                    currentY = e.Y;
 
-                // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
-                // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
-                selectedPiece = piece;
-                pieces.Remove(selectedPiece);
-                pieces.Add(selectedPiece);
+                    // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
+                    // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
+                    selectedPiece = piece;
+                    pieces.Remove(selectedPiece);
+                    pieces.Add(selectedPiece);
 
-                // tạo highlight ảnh mới
-                selectedPiece.mainPiece.isHighlight = true;
+                    // tạo highlight ảnh mới
+                    selectedPiece.mainPiece.isHighlight = true;
 
-                // khi click vào ảnh thì phải đổi chỉ số bên form Remote
-                frmRemote.changeIndex(map1[selectedPiece.index]);
+                    // khi click vào ảnh thì phải đổi chỉ số bên form Remote
+                    frmRemote.changeIndex(map1[selectedPiece.index]);
 
-                mainPic.Invalidate();
+                    mainPic.Invalidate();
 
-                var data = new SelectData(selectedPiece.index);
-                Send(new SendObject(SendObject.SELECT_MAIN, data));
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                // khi bấm chuột phải, xoay ảnh
-                Send(new SendObject(SendObject.ROTATE_MAIN, null));
+                    // bấm chuột thì gửi sự kiện lock cho các form khác
+                    Send(new SendObject(SendObject.LOCK_MAIN, null));
 
-                rotate();
+                    // đồng thời gửi sự kiện mảnh được chọn đã bị thay đổi
+                    var data = new SelectData(selectedPiece.index);
+                    Send(new SendObject(SendObject.SELECT_MAIN, data));
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // khi bấm chuột phải, xoay ảnh, gửi sự kiện xoay, xem Connection/SendObject.cs để rõ hơn
+                    Send(new SendObject(SendObject.ROTATE_MAIN, null));
+
+                    rotate();
+                }
             }
         }
 
         private void mainPic_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (!isLocked)
             {
-                isDragging = false;
-
-                // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
-
-                if (selectedPiece != null)
+                if (e.Button == MouseButtons.Left)
                 {
-                    // tự khớp ảnh và check biên
-                    fit();
-                    clamp();
+                    isDragging = false;
 
-                    mainPic.Invalidate();
+                    // nhả chuột ra thì phải check xem mảnh đấy đúng vị trí chưa
 
-                    var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
-                        selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
-                    Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+                    if (selectedPiece != null)
+                    {
+                        // tự khớp ảnh và check biên
+                        fit();
+                        clamp();
 
-                    checkPiece();
+                        mainPic.Invalidate();
+
+                        // gửi sự kiện mở khóa, vị trí mảnh bị thay đổi
+                        Send(new SendObject(SendObject.UNLOCK_MAIN, null));
+                        var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
+                            selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
+                        Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+
+                        checkPiece();
+                    }
                 }
             }
         }
 
         private void mainPic_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isDragging)
+            if (!isLocked)
             {
-                int top, left;
+                if (isDragging)
+                {
+                    int top, left;
 
-                left = selectedPiece.mainPiece.rect.Left + (e.X - currentX);
-                top = selectedPiece.mainPiece.rect.Top + (e.Y - currentY);
-                selectedPiece.mainPiece.rect.Location = new Point(left, top);
+                    left = selectedPiece.mainPiece.rect.Left + (e.X - currentX);
+                    top = selectedPiece.mainPiece.rect.Top + (e.Y - currentY);
+                    selectedPiece.mainPiece.rect.Location = new Point(left, top);
 
-                currentX = e.X;
-                currentY = e.Y;
+                    currentX = e.X;
+                    currentY = e.Y;
 
-                // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
-                clamp();
+                    // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
+                    clamp();
 
-                // Invalidate để vẽ lại pictureBox
-                mainPic.Invalidate();
+                    // Invalidate để vẽ lại pictureBox
+                    mainPic.Invalidate();
 
-                var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
-                        selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
-                Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+                    // gửi sự kiện mảnh bị thay đổi vị trí
+                    var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
+                            selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
+                    Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+                }
             }
         }
 
@@ -616,6 +657,9 @@ namespace GhepHinh
 
         public void win()
         {
+            // check cái countPieces = 0 là bởi thằng client win, nó đã gọi hàm này, tuy nhiên, server
+            // win lại gửi lại yêu cầu chạy hàm win => gọi 2 lần dẫn đến show MessageBox 2 lần
+            // thêm cái check này để tránh gọi 2 lần, dù sao thì nếu win rồi thì countPieces sẽ bằng 0 mà
             if (countPieces != 0)
             {
                 countPieces = 0;
@@ -645,6 +689,7 @@ namespace GhepHinh
                 // check xong mảnh đó rồi thì check win luôn
                 if (checkWin())
                 {
+                    // gửi sự kiện win cho các máy khác trước
                     Send(new SendObject(SendObject.WIN, null));
                     win();
                 }
@@ -661,8 +706,18 @@ namespace GhepHinh
                 frmRemote.Location = new Point(Width + Left + 10, Top);
         }
 
-        // Mạng LAN
+        // tắt chương trình thì đóng hết các kết nối
+        private void Main_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (server != null)
+                server.Close();
+            if (client != null)
+                client.Close();
+        }
 
+        /* Mạng LAN */
+
+        // mỗi form có thể là server hoặc client, chức năng của mình là gì thì làm việc đấy
         public void Send(SendObject obj)
         {
             if (isServer)
@@ -671,6 +726,8 @@ namespace GhepHinh
                 client.Send(obj);
         }
 
+        // khi client kết nối đến server, server sẽ gửi lại toàn bộ thông tin các thuộc tính
+        // của mình, client sẽ khởi tạo dựa theo các thuộc tính đó, gán lại hết luôn
         public void EventInit(InitData data)
         {
             col = data.col;
@@ -689,7 +746,7 @@ namespace GhepHinh
             frmRemote.selectedPiece = data.selectedPiece;
             countPieces = data.pieces.Count;
 
-            frmHelp.pictureBox.Image = data.image;
+            frmHelp.pictureBox.Image = image;
 
             mainPic.Enabled = true;
             frmRemote.remotePic.Enabled = true;
@@ -710,6 +767,8 @@ namespace GhepHinh
             frmRemote.lblSelected.Text = data.remoteIndex.ToString();
         }
 
+        // khi có ai đó chọn một mảnh ở form remote thì bắn một sự kiện
+        // form này nhận được sự kiện cũng thay đổi mảnh được chọn theo
         public void EventSelectRemote(SelectData data)
         {
             if (frmRemote.selectedPiece != null)
@@ -728,17 +787,23 @@ namespace GhepHinh
             }
         }
 
+        // tương tự, khi có mảnh nào đó dịch chuyển thì top, left sẽ thay đổi
+        // form này chỉ cần cập nhật top, left của mảnh đang chọn, dù gì thì mảnh
+        // đang chọn ở 2 máy luôn giống nhau
         public void EventTranslateRemote(TranslateData data)
         {
             frmRemote.selectedPiece.remotePiece.rect.Location = new Point(data.left, data.top);
             frmRemote.remotePic.Invalidate();
         }
 
+        // xoay mảnh đang chọn
         public void EventRotateRemote()
         {
             frmRemote.rotate();
         }
 
+        // khi có người nháy đúp vào một mảnh thì sẽ bắn sự kiện này
+        // máy kia cũng được đưa mảnh được chọn sang form main
         public void EventAppendMain()
         {
             frmRemote.append();
@@ -773,6 +838,30 @@ namespace GhepHinh
         public void EventWin()
         {
             win();
+        }
+
+        // khi có người kéo một mảnh bên form remote, form sẽ bị khóa, ko thể
+        // tác động được cho đến khi người đó nhả ra => Unlock
+        public void EventLockRemote()
+        {
+            frmRemote.isLocked = true;
+        }
+
+        public void EventUnlockRemote()
+        {
+            frmRemote.isLocked = false;
+        }
+
+        // tương tự, khi form main bị lock thì ko kéo thả đc, đồng thời
+        // các control bên remote cũng ko dùng được
+        public void EventLockMain()
+        {
+            isLocked = true;
+        }
+
+        public void EventUnlockMain()
+        {
+            isLocked = false;
         }
     }
 }

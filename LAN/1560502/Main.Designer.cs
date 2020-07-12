@@ -197,6 +197,7 @@
             this.Name = "Main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Ghép hình";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Main_FormClosed);
             this.LocationChanged += new System.EventHandler(this.Main_LocationChanged);
             ((System.ComponentModel.ISupportInitialize)(this.numCol)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRow)).EndInit();

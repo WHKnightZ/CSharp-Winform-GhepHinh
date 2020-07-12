@@ -19,6 +19,8 @@ namespace GhepHinh
         public List<Piece> pieces;
         public Piece selectedPiece = null;
 
+        public bool isLocked;
+
         public Remote()
         {
             InitializeComponent();
@@ -54,6 +56,7 @@ namespace GhepHinh
             }
         }
 
+        // đưa mảnh được chọn sang form Main, được gọi khi nháy đúp chuột vào 1 mảnh
         public void append()
         {
             //cần xoay bức ảnh bên main cho đúng chiều bên remote
@@ -127,139 +130,168 @@ namespace GhepHinh
 
         private void remotePic_MouseDown(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (!isLocked)
             {
-                // lấy ảnh được chọn theo tọa độ chuột
-                Piece piece = getPieceByMouse(e.X, e.Y);
-                if (piece == null)
-                    return;
+                if (e.Button == MouseButtons.Left)
+                {
+                    // lấy ảnh được chọn theo tọa độ chuột
+                    Piece piece = getPieceByMouse(e.X, e.Y);
+                    if (piece == null)
+                        return;
 
-                // xóa highlight ảnh cũ
-                if (selectedPiece != null)
-                    selectedPiece.remotePiece.isHighlight = false;
+                    // xóa highlight ảnh cũ
+                    if (selectedPiece != null)
+                        selectedPiece.remotePiece.isHighlight = false;
 
-                // được phép kéo dê ảnh
-                isDragging = true;
+                    // được phép kéo dê ảnh
+                    isDragging = true;
 
-                // lưu lại tọa độ chuột để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
-                currentX = e.X;
-                currentY = e.Y;
+                    // lưu lại tọa độ chuột để về sau kéo dê chuột bao nhiêu thì ảnh bị kéo theo bấy nhiêu
+                    currentX = e.X;
+                    currentY = e.Y;
 
-                // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
-                // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
-                selectedPiece = piece;
-                pieces.Remove(selectedPiece);
-                pieces.Add(selectedPiece);
+                    // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
+                    // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
+                    selectedPiece = piece;
+                    pieces.Remove(selectedPiece);
+                    pieces.Add(selectedPiece);
 
-                // tạo highlight ảnh mới
-                selectedPiece.remotePiece.isHighlight = true;
+                    // tạo highlight ảnh mới
+                    selectedPiece.remotePiece.isHighlight = true;
 
-                remotePic.Invalidate();
+                    remotePic.Invalidate();
 
-                var data = new SelectData(selectedPiece.index);
-                parent.Send(new SendObject(SendObject.SELECT_REMOTE, data));
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                parent.Send(new SendObject(SendObject.ROTATE_REMOTE, null));
-                rotate();
+                    // gửi sự kiện khóa form Remote và sự kiện chuyển mảnh được chọn
+                    parent.Send(new SendObject(SendObject.LOCK_REMOTE, null));
+                    var data = new SelectData(selectedPiece.index);
+                    parent.Send(new SendObject(SendObject.SELECT_REMOTE, data));
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // gửi sự kiện xoay mảnh được chọn
+                    parent.Send(new SendObject(SendObject.ROTATE_REMOTE, null));
+                    rotate();
+                }
             }
         }
 
         private void remotePic_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (!isLocked)
             {
-                isDragging = false;
+                if (e.Button == MouseButtons.Left)
+                {
+                    // gửi sự kiện mở khóa
+                    parent.Send(new SendObject(SendObject.UNLOCK_REMOTE, null));
+                    isDragging = false;
+                }
             }
         }
 
         private void remotePic_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isDragging)
+            if (!isLocked)
             {
-                int top, left;
+                if (isDragging)
+                {
+                    int top, left;
 
-                left = selectedPiece.remotePiece.rect.Left + (e.X - currentX);
-                top = selectedPiece.remotePiece.rect.Top + (e.Y - currentY);
-                selectedPiece.remotePiece.rect.Location = new Point(left, top);
+                    left = selectedPiece.remotePiece.rect.Left + (e.X - currentX);
+                    top = selectedPiece.remotePiece.rect.Top + (e.Y - currentY);
+                    selectedPiece.remotePiece.rect.Location = new Point(left, top);
 
-                currentX = e.X;
-                currentY = e.Y;
+                    currentX = e.X;
+                    currentY = e.Y;
 
-                // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
-                clamp(ref selectedPiece.remotePiece.rect);
+                    // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
+                    clamp(ref selectedPiece.remotePiece.rect);
 
-                // Invalidate để vẽ lại pictureBox
-                remotePic.Invalidate();
+                    // Invalidate để vẽ lại pictureBox
+                    remotePic.Invalidate();
 
-                var data = new TranslateData(selectedPiece.remotePiece.rect.Left, selectedPiece.remotePiece.rect.Top);
-                parent.Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
+                    var data = new TranslateData(selectedPiece.remotePiece.rect.Left, selectedPiece.remotePiece.rect.Top);
+                    parent.Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
+                }
             }
         }
 
         // double click thì đưa mảnh ghép sang form main
         private void remotePic_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (!isLocked && !parent.isLocked)
             {
-                if (selectedPiece == null)
-                    return;
+                if (e.Button == MouseButtons.Left)
+                {
+                    if (selectedPiece == null)
+                        return;
 
-                parent.Send(new SendObject(SendObject.APPEND_MAIN, null));
-                append();
+                    parent.Send(new SendObject(SendObject.APPEND_MAIN, null));
+                    append();
+                }
             }
         }
 
         // các hàm của button điều khiển
         private void btnMinus_MouseDown(object sender, MouseEventArgs e)
         {
-            if (parent.indexPiece > 1)
-                changeIndex(index - 1);
+            if (!parent.isLocked)
+            {
+                if (parent.indexPiece > 1)
+                    changeIndex(index - 1);
 
-            int i = parent.map2[index];
-            var data = new SelectData(i);
-            parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
-            parent.changePiece(i);
+                int i = parent.map2[index];
+                var data = new SelectData(i);
+                parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
+                parent.changePiece(i);
+            }
         }
 
         private void btnPlus_MouseDown(object sender, MouseEventArgs e)
         {
-            if (parent.indexPiece > 1)
-                changeIndex(index + 1);
-            int i = parent.map2[index];
-            var data = new SelectData(i);
-            parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
-            parent.changePiece(i);
+            if (!parent.isLocked)
+            {
+                if (parent.indexPiece > 1)
+                    changeIndex(index + 1);
+                int i = parent.map2[index];
+                var data = new SelectData(i);
+                parent.Send(new SendObject(SendObject.SELECT_MAIN, data));
+                parent.changePiece(i);
+            }
         }
 
         private void btnRotate_MouseDown(object sender, MouseEventArgs e)
         {
-            parent.Send(new SendObject(SendObject.ROTATE_MAIN, null));
-            parent.rotate();
+            if (!parent.isLocked)
+            {
+                parent.Send(new SendObject(SendObject.ROTATE_MAIN, null));
+                parent.rotate();
+            }
         }
 
         // dịch ảnh theo từng ô, công thêm một lượng bằng kích thước 1 ô WP và HP
         private void translate(int x, int y)
         {
-            parent.selectedPiece.x += x;
-            parent.selectedPiece.y += y;
+            if (!parent.isLocked)
+            {
+                parent.selectedPiece.x += x;
+                parent.selectedPiece.y += y;
 
-            int left = parent.selectedPiece.mainPiece.rect.Left, top = parent.selectedPiece.mainPiece.rect.Top;
-            left += x * parent.WP;
-            top += y * parent.HP;
+                int left = parent.selectedPiece.mainPiece.rect.Left, top = parent.selectedPiece.mainPiece.rect.Top;
+                left += x * parent.WP;
+                top += y * parent.HP;
 
-            parent.selectedPiece.mainPiece.rect.Location = new Point(left, top);
+                parent.selectedPiece.mainPiece.rect.Location = new Point(left, top);
 
-            parent.clamp();
+                parent.clamp();
 
-            var data = new TranslateData(parent.selectedPiece.mainPiece.rect.Left,
-                parent.selectedPiece.mainPiece.rect.Top, parent.selectedPiece.x, parent.selectedPiece.y);
-            parent.Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+                var data = new TranslateData(parent.selectedPiece.mainPiece.rect.Left,
+                    parent.selectedPiece.mainPiece.rect.Top, parent.selectedPiece.x, parent.selectedPiece.y);
+                parent.Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
 
-            parent.checkPiece();
+                parent.checkPiece();
 
-            parent.mainPic.Invalidate();
+                parent.mainPic.Invalidate();
+            }
         }
 
         private void btnLeft_MouseDown(object sender, MouseEventArgs e)
