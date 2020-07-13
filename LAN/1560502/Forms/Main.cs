@@ -93,6 +93,7 @@ namespace GhepHinh
         public Server server;
         public Client client;
 
+        public Queue<SendObject> sendObjects = new Queue<SendObject>();
         // mỗi khi có người đang kéo lê một mảnh ở form Main thì người khác
         // ko thể điều khiển, cho đến khi người đó nhả mảnh, isLocked để khóa kéo lê
         public bool isLocked;
@@ -538,7 +539,7 @@ namespace GhepHinh
         {
             // các sự kiện mouse, control bên form remote từ giờ sẽ bổ sung thêm check isLocked
             // để xem có người khác đang điều khiển thì khóa ko cho form này dùng chuột được
-            if (!isLocked)
+            //if (!isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -573,11 +574,9 @@ namespace GhepHinh
                     mainPic.Invalidate();
 
                     // bấm chuột thì gửi sự kiện lock cho các form khác
-                    Send(new SendObject(SendObject.LOCK_MAIN, null));
-
-                    // đồng thời gửi sự kiện mảnh được chọn đã bị thay đổi
                     var data = new SelectData(selectedPiece.index);
                     Send(new SendObject(SendObject.SELECT_MAIN, data));
+
                 }
                 else if (e.Button == MouseButtons.Right)
                 {
@@ -591,7 +590,7 @@ namespace GhepHinh
 
         private void mainPic_MouseUp(object sender, MouseEventArgs e)
         {
-            if (!isLocked)
+            //if (!isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -608,7 +607,6 @@ namespace GhepHinh
                         mainPic.Invalidate();
 
                         // gửi sự kiện mở khóa, vị trí mảnh bị thay đổi
-                        Send(new SendObject(SendObject.UNLOCK_MAIN, null));
                         var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
                             selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
                         Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
@@ -621,7 +619,7 @@ namespace GhepHinh
 
         private void mainPic_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!isLocked)
+            //if (!isLocked)
             {
                 if (isDragging)
                 {
@@ -640,7 +638,6 @@ namespace GhepHinh
                     // Invalidate để vẽ lại pictureBox
                     mainPic.Invalidate();
 
-                    // gửi sự kiện mảnh bị thay đổi vị trí
                     var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
                             selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
                     Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
@@ -717,15 +714,24 @@ namespace GhepHinh
                 client.Close();
         }
 
+        private void timer_Tick(object sender, EventArgs e)
+        {
+            if (sendObjects.Count > 0)
+            {
+                SendObject obj = sendObjects.Dequeue();
+                if (isServer)
+                    server.Send(obj);
+                else
+                    client.Send(obj);
+            }
+        }
+
         /* Mạng LAN */
 
         // mỗi form có thể là server hoặc client, chức năng của mình là gì thì làm việc đấy
         public void Send(SendObject obj)
         {
-            if (isServer)
-                server.Send(obj);
-            else
-                client.Send(obj);
+            sendObjects.Enqueue(obj);
         }
 
         // khi client kết nối đến server, server sẽ gửi lại toàn bộ thông tin các thuộc tính
@@ -844,8 +850,23 @@ namespace GhepHinh
 
         // khi có người kéo một mảnh bên form remote, form sẽ bị khóa, ko thể
         // tác động được cho đến khi người đó nhả ra => Unlock
-        public void EventLockRemote()
+        public void EventLockRemote(SelectData data)
         {
+            if (frmRemote.selectedPiece != null)
+                frmRemote.selectedPiece.remotePiece.isHighlight = false;
+            foreach (Piece piece in pieces)
+            {
+                if (piece.index == data.index)
+                {
+                    frmRemote.selectedPiece = piece;
+                    pieces.Remove(piece);
+                    pieces.Add(piece);
+                    piece.remotePiece.isHighlight = true;
+                    frmRemote.remotePic.Invalidate();
+                    return;
+                }
+            }
+
             frmRemote.isLocked = true;
         }
 
@@ -856,13 +877,28 @@ namespace GhepHinh
 
         // tương tự, khi form main bị lock thì ko kéo thả đc, đồng thời
         // các control bên remote cũng ko dùng được
-        public void EventLockMain()
+        public void EventLockMain(SelectData data)
         {
+            foreach (Piece piece in pieces)
+            {
+                if (piece.index == data.index)
+                {
+                    changePiece(data.index);
+                    frmRemote.changeIndex(map1[data.index]);
+                    return;
+                }
+            }
+
             isLocked = true;
         }
 
-        public void EventUnlockMain()
+        public void EventUnlockMain(TranslateData data)
         {
+            selectedPiece.x = data.x;
+            selectedPiece.y = data.y;
+            selectedPiece.mainPiece.rect.Location = new Point(data.left, data.top);
+            mainPic.Invalidate();
+
             isLocked = false;
         }
     }

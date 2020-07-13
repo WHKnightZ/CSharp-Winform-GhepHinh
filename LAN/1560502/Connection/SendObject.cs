@@ -14,7 +14,8 @@ namespace GhepHinh
         // Translate: Khi có ai đó dịch chuyển một mảnh
         // Rotate: Khi xoay một mảnh
         // Append: Khi có mảnh bị đưa sang Main
-        // Lock, Unlock: Khóa ko cho dùng, khi có ai đó kéo dê chuột
+        // Lock, Unlock: Khóa ko cho dùng, khi có ai đó kéo dê chuột/
+        // đồng thời gửi luôn sự kiện chọn lại mảnh mới khi lock, translate khi unlock
         // Lưu ý một số sự kiện ko cần dữ liệu như Rotate, Append, Win, Lock, Unlock
         // do nó sẽ xoay, append luôn mảnh đang được chọn
         

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.btnStart = new System.Windows.Forms.Button();
             this.numCol = new System.Windows.Forms.NumericUpDown();
@@ -39,6 +40,7 @@
             this.grpMain = new System.Windows.Forms.GroupBox();
             this.mainPic = new System.Windows.Forms.PictureBox();
             this.lblIP = new System.Windows.Forms.Label();
+            this.timer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.numCol)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numRow)).BeginInit();
             this.grpOption.SuspendLayout();
@@ -182,11 +184,17 @@
             this.lblIP.TabIndex = 8;
             this.lblIP.Text = "IP:";
             // 
+            // timer
+            // 
+            this.timer.Enabled = true;
+            this.timer.Interval = 10;
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(524, 502);
+            this.ClientSize = new System.Drawing.Size(524, 501);
             this.Controls.Add(this.lblIP);
             this.Controls.Add(this.grpMain);
             this.Controls.Add(this.grpOption);
@@ -223,6 +231,7 @@
         private System.Windows.Forms.Label lblIP;
         public System.Windows.Forms.NumericUpDown numCol;
         public System.Windows.Forms.NumericUpDown numRow;
+        private System.Windows.Forms.Timer timer;
     }
 }
 

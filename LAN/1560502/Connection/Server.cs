@@ -193,6 +193,10 @@ namespace GhepHinh
                 case SendObject.TRANSLATE_MAIN: frmMain.EventTranslateMain((TranslateData)obj.data); break;
                 case SendObject.ROTATE_MAIN: frmMain.EventRotateMain(); break;
                 case SendObject.WIN: frmMain.EventWin(); break;
+                case SendObject.LOCK_REMOTE: frmMain.EventLockRemote((SelectData)obj.data); break;
+                case SendObject.UNLOCK_REMOTE: frmMain.EventUnlockRemote(); break;
+                case SendObject.LOCK_MAIN: frmMain.EventLockMain((SelectData)obj.data); break;
+                case SendObject.UNLOCK_MAIN: frmMain.EventUnlockMain((TranslateData)obj.data); break;
             }
         }
     }
