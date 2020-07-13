@@ -10,5 +10,5 @@
 
 ### Hình ảnh
 
-[!img](https://github.com/WHKnightZ/CSharp-Winform-GhepHinh/blob/master/GhepHinh.png)
+![Image](https://github.com/WHKnightZ/CSharp-Winform-GhepHinh/blob/master/GhepHinh.png)
 
