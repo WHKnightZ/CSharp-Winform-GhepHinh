@@ -12,3 +12,10 @@
 
 ![Image](https://github.com/WHKnightZ/CSharp-Winform-GhepHinh/blob/master/GhepHinh.png)
 
+
+### Tham khảo
+
+```
+- LTWindows_Project01.pdf
+- LTWindows_Project02.pdf
+```

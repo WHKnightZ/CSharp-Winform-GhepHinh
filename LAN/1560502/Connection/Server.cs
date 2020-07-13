@@ -182,6 +182,8 @@ namespace GhepHinh
         // hàm xử lý các sự kiện nhận được, swich case luôn cho đơn giản
         void Process(SendObject obj)
         {
+            // ngoài switch case có thể tối ưu hóa bằng delegate (một mảng các hàm)
+            // delegate [] func, func[0] = frmMain.EventInit, func[1] = frmMain.EventSelectRemote ...
             switch (obj.type)
             {
                 case SendObject.INIT: frmMain.EventInit((InitData)obj.data); break;

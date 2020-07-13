@@ -89,9 +89,9 @@ namespace GhepHinh
 
         // lưu server, client để tương tác giữa các máy, mỗi form chỉ có
         // một trong 2 server hoặc client hoạt động, phụ thuộc vào isServer
-        public bool isServer;
-        public Server server;
-        public Client client;
+        public bool isServer; // cũng có thể tạo thêm một biến mới: sender, khi khởi tạo, sender
+        public Server server; // sẽ được gán = server hoặc client, về sau dùng luôn sender để gửi
+        public Client client; // chứ ko cần check isServer nữa
 
         public Queue<SendObject> sendObjects = new Queue<SendObject>();
         // mỗi khi có người đang kéo lê một mảnh ở form Main thì người khác
