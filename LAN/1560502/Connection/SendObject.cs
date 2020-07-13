@@ -4,6 +4,9 @@
 // mỗi sự kiện sẽ gồm có các thông tin như kiểu (khởi tạo, dịch mảnh, xoay mảnh ...)
 // và dữ liệu kèm theo, về sau khi nhận dữ liệu sẽ dùng switch case để xử lý
 
+// một số class có [Serializable], phải có cái này thì mới có thể mã hóa để gửi đi
+
+
 namespace GhepHinh
 {
     [Serializable]

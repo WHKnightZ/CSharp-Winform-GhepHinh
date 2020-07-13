@@ -13,8 +13,8 @@ namespace GhepHinh
     {
         // ở đây khi gửi dữ liệu sẽ phải gửi bằng một mảng byte, khi nhận cũng vậy
         // tuy nhiên phải khởi tạo một mảng byte trước mà ko biết kích thước bao nhiêu
-        // mình cho luôn bằng 1024, vì data gửi đến server khá nhẹ
-        public static int SIZE = 1024;
+        // mình cho luôn bằng 512, vì data gửi đến server khá nhẹ
+        public static int SIZE = 256;
 
         public Main frmMain;
         public Remote frmRemote;

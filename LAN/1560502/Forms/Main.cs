@@ -142,7 +142,6 @@ namespace GhepHinh
 
             // cho phép form hoạt động
             isLocked = false;
-            frmRemote.isLocked = false;
 
             // khởi tạo vài biến cơ bản
             pieces.Clear();
@@ -508,6 +507,9 @@ namespace GhepHinh
                 }
             }
 
+            if (piece == null)
+                return;
+
             // lưu lại ảnh đã chọn, đồng thời đưa ảnh lên trên bằng cách xóa nó khỏi danh sách
             // và đưa nó xuống cuối (do ảnh cuối danh sách được vẽ cuối cùng, sẽ ở trên cùng)
             selectedPiece = piece;
@@ -539,7 +541,7 @@ namespace GhepHinh
         {
             // các sự kiện mouse, control bên form remote từ giờ sẽ bổ sung thêm check isLocked
             // để xem có người khác đang điều khiển thì khóa ko cho form này dùng chuột được
-            //if (!isLocked)
+            if (!isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -575,7 +577,7 @@ namespace GhepHinh
 
                     // bấm chuột thì gửi sự kiện lock cho các form khác
                     var data = new SelectData(selectedPiece.index);
-                    Send(new SendObject(SendObject.SELECT_MAIN, data));
+                    Send(new SendObject(SendObject.LOCK_MAIN, data));
 
                 }
                 else if (e.Button == MouseButtons.Right)
@@ -590,7 +592,7 @@ namespace GhepHinh
 
         private void mainPic_MouseUp(object sender, MouseEventArgs e)
         {
-            //if (!isLocked)
+            if (!isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -609,7 +611,7 @@ namespace GhepHinh
                         // gửi sự kiện mở khóa, vị trí mảnh bị thay đổi
                         var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
                             selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
-                        Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+                        Send(new SendObject(SendObject.UNLOCK_MAIN, data));
 
                         checkPiece();
                     }
@@ -619,7 +621,7 @@ namespace GhepHinh
 
         private void mainPic_MouseMove(object sender, MouseEventArgs e)
         {
-            //if (!isLocked)
+            if (!isLocked)
             {
                 if (isDragging)
                 {
@@ -637,10 +639,6 @@ namespace GhepHinh
 
                     // Invalidate để vẽ lại pictureBox
                     mainPic.Invalidate();
-
-                    var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
-                            selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
-                    Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
                 }
             }
         }
@@ -716,6 +714,20 @@ namespace GhepHinh
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            if (isDragging)
+            {
+                var data = new TranslateData(selectedPiece.mainPiece.rect.Left,
+                            selectedPiece.mainPiece.rect.Top, selectedPiece.x, selectedPiece.y);
+                Send(new SendObject(SendObject.TRANSLATE_MAIN, data));
+            }
+            else
+            if (frmRemote.isDragging)
+            {
+                var data = new TranslateData(frmRemote.selectedPiece.remotePiece.rect.Left,
+                            frmRemote.selectedPiece.remotePiece.rect.Top);
+                Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
+            }
+
             if (sendObjects.Count > 0)
             {
                 SendObject obj = sendObjects.Dequeue();
@@ -867,12 +879,12 @@ namespace GhepHinh
                 }
             }
 
-            frmRemote.isLocked = true;
+            isLocked = true;
         }
 
         public void EventUnlockRemote()
         {
-            frmRemote.isLocked = false;
+            isLocked = false;
         }
 
         // tương tự, khi form main bị lock thì ko kéo thả đc, đồng thời

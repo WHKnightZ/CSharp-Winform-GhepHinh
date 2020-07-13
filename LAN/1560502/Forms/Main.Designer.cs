@@ -187,14 +187,14 @@
             // timer
             // 
             this.timer.Enabled = true;
-            this.timer.Interval = 10;
+            this.timer.Interval = 15;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(524, 501);
+            this.ClientSize = new System.Drawing.Size(524, 502);
             this.Controls.Add(this.lblIP);
             this.Controls.Add(this.grpMain);
             this.Controls.Add(this.grpOption);

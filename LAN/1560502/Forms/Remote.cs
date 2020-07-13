@@ -19,8 +19,6 @@ namespace GhepHinh
         public List<Piece> pieces;
         public Piece selectedPiece = null;
 
-        public bool isLocked;
-
         public Remote()
         {
             InitializeComponent();
@@ -130,7 +128,7 @@ namespace GhepHinh
 
         private void remotePic_MouseDown(object sender, MouseEventArgs e)
         {
-            //if (!isLocked)
+            if (!parent.isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -163,7 +161,7 @@ namespace GhepHinh
 
                     // gửi sự kiện khóa form Remote và sự kiện chuyển mảnh được chọn
                     var data = new SelectData(selectedPiece.index);
-                    parent.Send(new SendObject(SendObject.SELECT_REMOTE, data));
+                    parent.Send(new SendObject(SendObject.LOCK_REMOTE, data));
                 }
                 else if (e.Button == MouseButtons.Right)
                 {
@@ -176,7 +174,7 @@ namespace GhepHinh
 
         private void remotePic_MouseUp(object sender, MouseEventArgs e)
         {
-
+            if (!parent.isLocked)
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -185,7 +183,7 @@ namespace GhepHinh
                     {
                         var data = new TranslateData(selectedPiece.remotePiece.rect.Left,
                                 selectedPiece.remotePiece.rect.Top);
-                        parent.Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
+                        parent.Send(new SendObject(SendObject.UNLOCK_REMOTE, data));
                     }
                     isDragging = false;
                 }
@@ -194,46 +192,42 @@ namespace GhepHinh
 
         private void remotePic_MouseMove(object sender, MouseEventArgs e)
         {
-            //if (!isLocked)
-            //{
-            if (isDragging)
+            if (!parent.isLocked)
             {
-                int top, left;
+                if (isDragging)
+                {
+                    int top, left;
 
-                left = selectedPiece.remotePiece.rect.Left + (e.X - currentX);
-                top = selectedPiece.remotePiece.rect.Top + (e.Y - currentY);
-                selectedPiece.remotePiece.rect.Location = new Point(left, top);
+                    left = selectedPiece.remotePiece.rect.Left + (e.X - currentX);
+                    top = selectedPiece.remotePiece.rect.Top + (e.Y - currentY);
+                    selectedPiece.remotePiece.rect.Location = new Point(left, top);
 
-                currentX = e.X;
-                currentY = e.Y;
+                    currentX = e.X;
+                    currentY = e.Y;
 
-                // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
-                clamp(ref selectedPiece.remotePiece.rect);
+                    // sau khi di chuyển cần phải giới hạn lại vị trí, ko cho nó ra ngoài biên
+                    clamp(ref selectedPiece.remotePiece.rect);
 
-                // Invalidate để vẽ lại pictureBox
-                remotePic.Invalidate();
-
-                var data = new TranslateData(selectedPiece.remotePiece.rect.Left,
-                            selectedPiece.remotePiece.rect.Top);
-                parent.Send(new SendObject(SendObject.TRANSLATE_REMOTE, data));
+                    // Invalidate để vẽ lại pictureBox
+                    remotePic.Invalidate();
+                }
             }
-            //}
         }
 
         // double click thì đưa mảnh ghép sang form main
         private void remotePic_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            //if (!isLocked && !parent.isLocked)
-            //{
-            if (e.Button == MouseButtons.Left)
+            if (!parent.isLocked)
             {
-                if (selectedPiece == null)
-                    return;
+                if (e.Button == MouseButtons.Left)
+                {
+                    if (selectedPiece == null)
+                        return;
 
-                parent.Send(new SendObject(SendObject.APPEND_MAIN, null));
-                append();
+                    parent.Send(new SendObject(SendObject.APPEND_MAIN, null));
+                    append();
+                }
             }
-            //}
         }
 
         // các hàm của button điều khiển
