@@ -176,7 +176,7 @@ namespace GhepHinh
         {
             if (!parent.isLocked)
             {
-                if (e.Button == MouseButtons.Left)
+                if (e.Button == MouseButtons.Left && isDragging)
                 {
                     // gửi sự kiện mở khóa
                     if (selectedPiece != null)
@@ -221,6 +221,8 @@ namespace GhepHinh
             {
                 if (e.Button == MouseButtons.Left)
                 {
+                    if (getPieceByMouse(e.X, e.Y) == null)
+                        return;
                     if (selectedPiece == null)
                         return;
 

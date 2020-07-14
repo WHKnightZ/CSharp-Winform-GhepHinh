@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Net;
@@ -98,6 +99,10 @@ namespace GhepHinh
         // ko thể điều khiển, cho đến khi người đó nhả mảnh, isLocked để khóa kéo lê
         public bool isLocked;
 
+        public string textMainName;
+        public string textServer;
+        public string textClient;
+
         public Main()
         {
             InitializeComponent();
@@ -129,6 +134,12 @@ namespace GhepHinh
             frmHelp = new Help();
             // lúc đầu tắt checkbox Help
             cbHelp.Enabled = false;
+
+            // Đọc file config
+            textMainName = ConfigurationManager.AppSettings["TEXT_MAIN_NAME"];
+            Text = textMainName;
+            textServer = ConfigurationManager.AppSettings["TEXT_SERVER"];
+            textClient = ConfigurationManager.AppSettings["TEXT_CLIENT"];
         }
 
         // reset các trạng thái khi chọn ảnh mới
@@ -180,7 +191,7 @@ namespace GhepHinh
                         if (!client.isActive)
                             return;
 
-                        this.Text = "Ghép hình - Khách";
+                        this.Text = textMainName + " - " + textClient;
                     }
                 }
             }
@@ -335,7 +346,7 @@ namespace GhepHinh
             if (!server.isActive)
                 return;
 
-            this.Text = "Ghép hình - Chủ";
+            this.Text = textMainName + " - " + textServer;
 
             // gán bức ảnh ở form Help bằng ảnh đã chọn
             frmHelp.pictureBox.Image = image;
@@ -595,7 +606,7 @@ namespace GhepHinh
         {
             if (!isLocked)
             {
-                if (e.Button == MouseButtons.Left)
+                if (e.Button == MouseButtons.Left && isDragging)
                 {
                     isDragging = false;
 

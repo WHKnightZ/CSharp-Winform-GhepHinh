@@ -52,7 +52,7 @@ namespace GhepHinh
                 // Port = 9999 thì chọn bừa cũng được, miễn là giống với Port bên client, kiểu
                 // 2 thằng phải vào cùng một chỗ mới gặp nhau được
                 IP = new IPEndPoint(IPAddress.Any, 9999);
-                server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+                server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 server.Bind(IP);
 
                 // khởi tạo xong thì tạo một luồng chạy ngầm liên tục lắng nghe mấy thằng kết nối đến
@@ -66,8 +66,9 @@ namespace GhepHinh
                             // các lệnh bên dưới sẽ ko chạy cho đến khi nào có một client kết nối đến
                             // nếu một client kết nối đến, các lệnh khởi tạo bên dưới sẽ được chạy và
                             // vòng lặp lại quay về đây, server lại lắng nghe tiếp client khác
-                            server.Listen(100);
-                            
+                            // max 4 client
+                            server.Listen(4);
+
                             // client kết nối thì chấp nhận và lưu client đó lại, thêm vào danh sách các client
                             Socket client = server.Accept();
                             clientList.Add(client);
@@ -112,6 +113,7 @@ namespace GhepHinh
         // hàm gửi sự kiện
         public void Send(SendObject obj)
         {
+            Console.WriteLine("Send: " + obj.type);
             // khi gửi thì phải gửi cho tất cả các client
             foreach (Socket item in clientList)
             {
@@ -184,6 +186,7 @@ namespace GhepHinh
         {
             // ngoài switch case có thể tối ưu hóa bằng delegate (một mảng các hàm)
             // delegate [] func, func[0] = frmMain.EventInit, func[1] = frmMain.EventSelectRemote ...
+            Console.WriteLine("Receive: " + obj.type);
             switch (obj.type)
             {
                 case SendObject.INIT: frmMain.EventInit((InitData)obj.data); break;

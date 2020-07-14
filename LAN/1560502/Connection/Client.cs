@@ -54,7 +54,7 @@ namespace GhepHinh
         // khởi tạo kết nối đến server
         void Connect()
         {
-            client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+            client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             try
             {
                 // kết nối đến IP vừa nhập, cụ thể là IP của server
@@ -86,6 +86,7 @@ namespace GhepHinh
         // chính là thằng server đã kết nối đến
         public void Send(SendObject obj)
         {
+            Console.WriteLine("Send: " + obj.type);
             if (client != null)
             {
                 client.Send(Serialize(obj));
@@ -133,6 +134,7 @@ namespace GhepHinh
 
         void Process(SendObject obj)
         {
+            Console.WriteLine("Receive: " + obj.type);
             switch (obj.type)
             {
                 case SendObject.INIT: frmMain.EventInit((InitData)obj.data); break;
