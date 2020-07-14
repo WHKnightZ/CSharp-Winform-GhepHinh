@@ -134,6 +134,7 @@ namespace GhepHinh
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
+            sendObjects = new Queue<SendObject>();
             // nếu server, client đã có thì phải giải phóng trước, chẳng hạn lúc game đang chơ mà chơi lại
             if (server != null)
                 server.Close();
@@ -909,6 +910,7 @@ namespace GhepHinh
             selectedPiece.x = data.x;
             selectedPiece.y = data.y;
             selectedPiece.mainPiece.rect.Location = new Point(data.left, data.top);
+
             mainPic.Invalidate();
 
             isLocked = false;

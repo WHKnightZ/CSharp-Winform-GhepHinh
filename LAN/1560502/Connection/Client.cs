@@ -13,9 +13,9 @@ namespace GhepHinh
     {
         // ở bên server chỉ 1024 nhưng ở đây thì phải xử lý khác một chút, do ban đầu khởi tạo thì phải
         // gửi một đống hình ảnh, khá nặng nên kích thước mảng byte lớn chút, khởi tạo xong thì lại đưa
-        // về 512 cho nhẹ
-        public static int SIZE_BASE = 1024 * 4000;
-        public static int SIZE = 256;
+        // về 1024 cho nhẹ
+        public static int SIZE_BASE = 1024 * 5000;
+        public static int SIZE = 1024;
 
         public Main frmMain;
         public Remote frmRemote;
