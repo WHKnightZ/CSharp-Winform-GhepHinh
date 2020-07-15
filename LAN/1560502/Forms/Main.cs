@@ -137,20 +137,39 @@ namespace GhepHinh
 
             // Đọc file config
             textMainName = ConfigurationManager.AppSettings["TEXT_MAIN_NAME"];
-            Text = textMainName;
             textServer = ConfigurationManager.AppSettings["TEXT_SERVER"];
             textClient = ConfigurationManager.AppSettings["TEXT_CLIENT"];
+            Text = textMainName;
+
+            grpOption.Text = ConfigurationManager.AppSettings["TEXT_GRP_OPTION"];
+            lblCol.Text = ConfigurationManager.AppSettings["TEXT_COL"];
+            lblRow.Text = ConfigurationManager.AppSettings["TEXT_ROW"];
+            btnStart.Text = ConfigurationManager.AppSettings["TEXT_BTN_START"];
+            cbHelp.Text = ConfigurationManager.AppSettings["TEXT_HELP"];
+            frmHelp.Text = ConfigurationManager.AppSettings["TEXT_HELP"];
+            grpMain.Text = ConfigurationManager.AppSettings["TEXT_GRP_MAIN"];
+            frmRemote.Text = ConfigurationManager.AppSettings["TEXT_REMOTE_NAME"];
+            frmRemote.grpPieces.Text = ConfigurationManager.AppSettings["TEXT_GRP_PIECES"];
+            frmRemote.grpSelectPiece.Text = ConfigurationManager.AppSettings["TEXT_GRP_SELECT_PIECE"];
+            frmRemote.grpControl.Text = ConfigurationManager.AppSettings["TEXT_GRP_CONTROL"];
+
+            numCol.Value = Convert.ToInt32(ConfigurationManager.AppSettings["NUM_COL"]);
+            numRow.Value = Convert.ToInt32(ConfigurationManager.AppSettings["NUM_ROW"]);
         }
 
         // reset các trạng thái khi chọn ảnh mới
         public void reset()
         {
             sendObjects = new Queue<SendObject>();
-            // nếu server, client đã có thì phải giải phóng trước, chẳng hạn lúc game đang chơ mà chơi lại
-            if (server != null)
-                server.Close();
-            if (client != null)
-                client.Close();
+            // nếu server, client đã có thì phải giải phóng trước, chẳng hạn lúc game đang chơi mà chơi lại
+            try
+            {
+                if (server != null)
+                    server.Close();
+                if (client != null)
+                    client.Close();
+            }
+            catch { }
 
             // cho phép form hoạt động
             isLocked = false;
@@ -164,6 +183,9 @@ namespace GhepHinh
             frmRemote.index = 0;
             frmRemote.lblSelected.Text = "0";
             mainPic.Image = null;
+
+            mainPic.Invalidate();
+            frmRemote.remotePic.Invalidate();
         }
 
         private void btnStart_Click(object sender, EventArgs e)
@@ -178,12 +200,13 @@ namespace GhepHinh
                     openFileDialog.ShowDialog();
                 else
                 {
-                    InputIP input = new InputIP(IP);
+                    Input input = new Input(IP);
                     var result2 = input.ShowDialog();
                     if (result2 == DialogResult.OK)
                     {
                         reset();
-                        IP = input.IP;
+                        IP = input.serverIP;
+                        string clientName = input.clientName;
                         isServer = false;
 
                         // khởi tạo client, xem trong Connection/Client.cs để rõ hơn
@@ -192,6 +215,7 @@ namespace GhepHinh
                             return;
 
                         this.Text = textMainName + " - " + textClient;
+                        lblIP.Text = "IP: " + IP + "  -  " + "Tên khách: " + clientName;
                     }
                 }
             }

@@ -60,11 +60,11 @@
     <Compile Include="Connection\SelectData.cs" />
     <Compile Include="Connection\TranslateData.cs" />
     <Compile Include="Connection\InitData.cs" />
-    <Compile Include="Forms\InputIP.cs">
+    <Compile Include="Forms\Input.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\InputIP.Designer.cs">
-      <DependentUpon>InputIP.cs</DependentUpon>
+    <Compile Include="Forms\Input.Designer.cs">
+      <DependentUpon>Input.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\Main.cs">
       <SubType>Form</SubType>
@@ -93,8 +93,8 @@
     <EmbeddedResource Include="Forms\Choose.resx">
       <DependentUpon>Choose.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\InputIP.resx">
-      <DependentUpon>InputIP.cs</DependentUpon>
+    <EmbeddedResource Include="Forms\Input.resx">
+      <DependentUpon>Input.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\Main.resx">
       <DependentUpon>Main.cs</DependentUpon>

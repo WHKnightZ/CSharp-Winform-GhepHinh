@@ -40,6 +40,13 @@ namespace GhepHinh
             Connect();
         }
 
+        public static void ConfigureTcpSocket(Socket tcpSocket)
+        {
+            tcpSocket.NoDelay = true;
+            tcpSocket.ReceiveBufferSize = 1024;
+            tcpSocket.SendBufferSize = 1024;
+        }
+
         // hàm tạo kết nối
         void Connect()
         {
@@ -53,6 +60,7 @@ namespace GhepHinh
                 // 2 thằng phải vào cùng một chỗ mới gặp nhau được
                 IP = new IPEndPoint(IPAddress.Any, 9999);
                 server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                ConfigureTcpSocket(server);
                 server.Bind(IP);
 
                 // khởi tạo xong thì tạo một luồng chạy ngầm liên tục lắng nghe mấy thằng kết nối đến
@@ -71,6 +79,7 @@ namespace GhepHinh
 
                             // client kết nối thì chấp nhận và lưu client đó lại, thêm vào danh sách các client
                             Socket client = server.Accept();
+                            ConfigureTcpSocket(client);
                             clientList.Add(client);
 
                             // đồng thời gửi sự kiện khởi tạo cho client đó để client đó sao chép dữ liệu cho giống với server
@@ -115,14 +124,18 @@ namespace GhepHinh
         {
             Console.WriteLine("Send: " + obj.type);
             // khi gửi thì phải gửi cho tất cả các client
-            foreach (Socket item in clientList)
+            try
             {
-                if (item != null)
+                foreach (Socket item in clientList)
                 {
-                    // mã hóa xong mới được gửi
-                    item.Send(Serialize(obj));
+                    if (item != null)
+                    {
+                        // mã hóa xong mới được gửi
+                        item.Send(Serialize(obj));
+                    }
                 }
             }
+            catch { }
         }
 
         // hàm nhận sự kiện

@@ -176,18 +176,18 @@
             // 
             // lblIP
             // 
-            this.lblIP.AutoSize = true;
             this.lblIP.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblIP.Location = new System.Drawing.Point(419, 483);
+            this.lblIP.Location = new System.Drawing.Point(29, 483);
             this.lblIP.Name = "lblIP";
-            this.lblIP.Size = new System.Drawing.Size(20, 13);
+            this.lblIP.Size = new System.Drawing.Size(467, 13);
             this.lblIP.TabIndex = 8;
             this.lblIP.Text = "IP:";
+            this.lblIP.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // timer
             // 
             this.timer.Enabled = true;
-            this.timer.Interval = 15;
+            this.timer.Interval = 25;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
             // Main
@@ -214,7 +214,6 @@
             this.grpMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.mainPic)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 

@@ -87,7 +87,7 @@
             this.grpSelectPiece.Size = new System.Drawing.Size(206, 107);
             this.grpSelectPiece.TabIndex = 2;
             this.grpSelectPiece.TabStop = false;
-            this.grpSelectPiece.Text = "Select Piece";
+            this.grpSelectPiece.Text = "Select piece";
             // 
             // btnPlus
             // 
@@ -187,7 +187,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(584, 368);
+            this.ClientSize = new System.Drawing.Size(584, 367);
             this.ControlBox = false;
             this.Controls.Add(this.grpControl);
             this.Controls.Add(this.grpSelectPiece);
@@ -217,9 +217,7 @@
 
         #endregion
         public System.Windows.Forms.GroupBox grpPieces;
-        private System.Windows.Forms.GroupBox grpSelectPiece;
         private System.Windows.Forms.PictureBox btnMinus;
-        private System.Windows.Forms.GroupBox grpControl;
         private System.Windows.Forms.PictureBox btnPlus;
         private System.Windows.Forms.PictureBox btnRotate;
         private System.Windows.Forms.PictureBox btnLeft;
@@ -228,5 +226,7 @@
         private System.Windows.Forms.PictureBox btnUp;
         public System.Windows.Forms.Label lblSelected;
         public System.Windows.Forms.PictureBox remotePic;
+        public System.Windows.Forms.GroupBox grpSelectPiece;
+        public System.Windows.Forms.GroupBox grpControl;
     }
 }

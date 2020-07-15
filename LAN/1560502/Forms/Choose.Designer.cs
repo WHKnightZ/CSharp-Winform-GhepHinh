@@ -36,12 +36,12 @@
             // lbl
             // 
             this.lbl.AutoSize = true;
-            this.lbl.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbl.Location = new System.Drawing.Point(27, 28);
+            this.lbl.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lbl.Location = new System.Drawing.Point(51, 31);
             this.lbl.Name = "lbl";
-            this.lbl.Size = new System.Drawing.Size(236, 19);
+            this.lbl.Size = new System.Drawing.Size(188, 16);
             this.lbl.TabIndex = 0;
-            this.lbl.Text = "Bạn muốn làm Chủ hay làm Khách?";
+            this.lbl.Text = "Bạn muốn làm chủ hay khách?";
             // 
             // btnServer
             // 
