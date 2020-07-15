@@ -155,6 +155,9 @@ namespace GhepHinh
 
             numCol.Value = Convert.ToInt32(ConfigurationManager.AppSettings["NUM_COL"]);
             numRow.Value = Convert.ToInt32(ConfigurationManager.AppSettings["NUM_ROW"]);
+
+            timer.Interval = Convert.ToInt32(ConfigurationManager.AppSettings["TIMER_INTERVAL"]);
+            timer.Enabled = true;
         }
 
         // reset các trạng thái khi chọn ảnh mới

@@ -40,13 +40,6 @@ namespace GhepHinh
             Connect();
         }
 
-        public static void ConfigureTcpSocket(Socket tcpSocket)
-        {
-            tcpSocket.NoDelay = true;
-            tcpSocket.ReceiveBufferSize = 1024;
-            tcpSocket.SendBufferSize = 1024;
-        }
-
         // hàm tạo kết nối
         void Connect()
         {
@@ -60,7 +53,6 @@ namespace GhepHinh
                 // 2 thằng phải vào cùng một chỗ mới gặp nhau được
                 IP = new IPEndPoint(IPAddress.Any, 9999);
                 server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                ConfigureTcpSocket(server);
                 server.Bind(IP);
 
                 // khởi tạo xong thì tạo một luồng chạy ngầm liên tục lắng nghe mấy thằng kết nối đến
@@ -79,7 +71,6 @@ namespace GhepHinh
 
                             // client kết nối thì chấp nhận và lưu client đó lại, thêm vào danh sách các client
                             Socket client = server.Accept();
-                            ConfigureTcpSocket(client);
                             clientList.Add(client);
 
                             // đồng thời gửi sự kiện khởi tạo cho client đó để client đó sao chép dữ liệu cho giống với server
@@ -122,7 +113,7 @@ namespace GhepHinh
         // hàm gửi sự kiện
         public void Send(SendObject obj)
         {
-            Console.WriteLine("Send: " + obj.type);
+            //Console.WriteLine("Send: " + obj.type);
             // khi gửi thì phải gửi cho tất cả các client
             try
             {
@@ -199,7 +190,7 @@ namespace GhepHinh
         {
             // ngoài switch case có thể tối ưu hóa bằng delegate (một mảng các hàm)
             // delegate [] func, func[0] = frmMain.EventInit, func[1] = frmMain.EventSelectRemote ...
-            Console.WriteLine("Receive: " + obj.type);
+            //Console.WriteLine("Receive: " + obj.type);
             switch (obj.type)
             {
                 case SendObject.INIT: frmMain.EventInit((InitData)obj.data); break;
